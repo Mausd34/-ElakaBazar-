@@ -6,8 +6,26 @@ class Command(BaseCommand):
     help = "Create demo ElakaBazar users, shops and grocery products."
     def handle(self, *args, **kwargs):
         areas = {}
-        for name in ["Tongi", "Gazipura", "Board Bazar"]:
-            areas[name], _ = Area.objects.get_or_create(name=name, defaults={"district":"Gazipur"})
+        locations = [
+            ("Tongi", "Gazipur"),
+            ("Gazipura", "Gazipur"),
+            ("Board Bazar", "Gazipur"),
+            ("Uttara", "Dhaka"),
+            ("Mirpur", "Dhaka"),
+            ("Dhanmondi", "Dhaka"),
+            ("Mohammadpur", "Dhaka"),
+            ("Gulshan", "Dhaka"),
+            ("Banani", "Dhaka"),
+            ("Badda", "Dhaka"),
+            ("Bashundhara R/A", "Dhaka"),
+            ("Jatrabari", "Dhaka"),
+            ("Motijheel", "Dhaka"),
+            ("Tejgaon", "Dhaka"),
+            ("Farmgate", "Dhaka"),
+            ("Lalbagh", "Dhaka"),
+        ]
+        for name, district in locations:
+            areas[name], _ = Area.objects.get_or_create(name=name, defaults={"district":district})
         accounts = [
             ("01700000001", "Demo Customer", User.Role.CUSTOMER),
             ("01700000002", "Demo Shopkeeper", User.Role.SHOPKEEPER),
