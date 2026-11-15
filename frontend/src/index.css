@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom colors */
+@layer base {
+  :root {
+    --color-primary: #16834a; /* Fresh green */
+    --color-secondary: #ffffff; /* White */
+    --color-accent: #ff6600; /* Orange */
+    --font-bangla: 'Noto Sans Bengali', sans-serif;
+    --font-english: 'Inter', sans-serif;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
