@@ -1,0 +1,31 @@
+<svg width="375" height="812" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <rect x="0" y="0" width="375" height="50" fill="#3b82f6"/>
+  <text x="187" y="33" font-family="Arial, sans-serif" font-size="18" fill="white" text-anchor="middle" font-weight="bold">Delivery Jobs</text>
+  <rect x="20" y="70" width="335" height="120" fill="#f9fafb" rx="8"/>
+  <text x="40" y="95" font-family="Arial, sans-serif" font-size="14" fill="#374151" font-weight="bold">Rahim Ahmed</text>
+  <text x="40" y="115" font-family="Arial, sans-serif" font-size="12" fill="#6b7280">Delivery Agent • 4.9 ★</text>
+  <text x="40" y="135" font-family="Arial, sans-serif" font-size="12" fill="#374151">Earnings today: ৳850</text>
+  <rect x="20" y="210" width="335" height="450" fill="#f9fafb" rx="8"/>
+  <text x="40" y="235" font-family="Arial, sans-serif" font-size="16" fill="#1f2937" font-weight="bold">Assigned Jobs</text>
+  <rect x="40" y="255" width="295" height="100" fill="#ffffff" rx="8" stroke="#e5e7eb"/>
+  <rect x="50" y="265" width="80" height="80" fill="#e5e7eb" rx="4"/>
+  <text x="140" y="285" font-family="Arial, sans-serif" font-size="14" fill="#374151" font-weight="bold">Order #ELK-A1B2</text>
+  <text x="140" y="305" font-family="Arial, sans-serif" font-size="12" fill="#6b7280">Green Mart → Customer</text>
+  <text x="140" y="325" font-family="Arial, sans-serif" font-size="12" fill="#374151">Distance: 2.4 km</text>
+  <text x="290" y="290" font-family="Arial, sans-serif" font-size="12" fill="#10b981" font-weight="bold">Picked Up</text>
+  <rect x="40" y="375" width="295" height="100" fill="#ffffff" rx="8" stroke="#e5e7eb"/>
+  <rect x="50" y="385" width="80" height="80" fill="#e5e7eb" rx="4"/>
+  <text x="140" y="405" font-family="Arial, sans-serif" font-size="14" fill="#374151" font-weight="bold">Order #ELK-D4E5</text>
+  <text x="140" y="425" font-family="Arial, sans-serif" font-size="12" fill="#6b7280">Fresh Basket → Customer</text>
+  <text x="140" y="445" font-family="Arial, sans-serif" font-size="12" fill="#374151">Distance: 1.8 km</text>
+  <text x="290" y="420" font-family="Arial, sans-serif" font-size="12" fill="#f59e0b" font-weight="bold">Assigned</text>
+  <rect x="40" y="495" width="295" height="100" fill="#ffffff" rx="8" stroke="#e5e7eb"/>
+  <rect x="50" y="505" width="80" height="80" fill="#e5e7eb" rx="4"/>
+  <text x="140" y="525" font-family="Arial, sans-serif" font-size="14" fill="#374151" font-weight="bold">Order #ELK-G7H8</text>
+  <text x="140" y="545" font-family="Arial, sans-serif" font-size="12" fill="#6b7280">Dhaka Dairy → Customer</text>
+  <text x="140" y="565" font-family="Arial, sans-serif" font-size="12" fill="#374151">Distance: 3.1 km</text>
+  <text x="290" y="540" font-family="Arial, sans-serif" font-size="12" fill="#f59e0b" font-weight="bold">Assigned</text>
+  <rect x="20" y="680" width="335" height="110" fill="#fef3c2" rx="8"/>
+  <text x="40" y="705" font-family="Arial, sans-serif" font-size="14" fill="#92400e" font-weight="bold">No active deliveries</text>
+</svg>
