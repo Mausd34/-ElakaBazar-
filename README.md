@@ -59,15 +59,21 @@ This project is designed for rapid validation of a local grocery marketplace bef
 
 ### Homepage
 
-![ElakaBazar homepage](./docs/screenshots/homepage.png)
+<p align="center">
+  <img src="./docs/screenshots/homepage.png" alt="Full desktop view of the ElakaBazar homepage" width="100%" />
+</p>
 
 ### Store listing
 
-![ElakaBazar store listing](./docs/screenshots/stores.png)
+<p align="center">
+  <img src="./docs/screenshots/stores.png" alt="Desktop view of ElakaBazar neighborhood stores" width="100%" />
+</p>
 
 ### Shopkeeper dashboard
 
-![ElakaBazar shopkeeper dashboard](./docs/screenshots/shopkeeper.png)
+<p align="center">
+  <img src="./docs/screenshots/shopkeeper.png" alt="Desktop view of the ElakaBazar shopkeeper dashboard" width="100%" />
+</p>
 
 ---
 
