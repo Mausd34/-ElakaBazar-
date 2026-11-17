@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, Route, Routes, useNavigate } from 'react-router-dom'
-import { ShoppingBasket, MapPin, Search, UserRound, ShoppingCart, Menu, Plus, Minus, Trash2, Store, Package, Sun, Moon } from 'lucide-react'
+import { ShoppingBasket, MapPin, Search, UserRound, ShoppingCart, Menu, Plus, Minus, Trash2, Store, Package, Sun, Moon, Heart } from 'lucide-react'
 import { api, login } from './api'
 import RegisterPage from './pages/RegisterPage'
 import AccountPage from './pages/AccountPage'
@@ -12,6 +12,7 @@ import ShopkeeperApplicationPage from './pages/ShopkeeperApplicationPage'
 
 type Shop = { id:number; name:string; area_name:string; address:string; delivery_fee:string; minimum_order:string }
 type Product = { id:number; shop:number; shop_name:string; product:number; product_name:string; product_name_bn:string; unit:string; image_url:string; category_name:string; price:string; stock:string }
+type Favorite = { id:number; shop_product:number; product_name:string; product_name_bn:string; shop_name:string; image_url:string; price:string }
 type Cart = { id:number; shop:number|null; shop_name:string; items:{id:number;shop_product:number;product_name:string;product_name_bn:string;unit:string;price:string;quantity:string;image_url:string}[] }
 type SessionUser = { role:string; is_staff:boolean }
 type Language = 'bn' | 'en'
@@ -21,13 +22,16 @@ function App() {
   const [areas,setAreas] = useState<{id:number;name:string}[]>([])
   const [shops,setShops] = useState<Shop[]>([])
   const [products,setProducts] = useState<Product[]>([])
+  const [favorites,setFavorites] = useState<Favorite[]>([])
   const [search,setSearch] = useState('')
   const [selectedCategory,setSelectedCategory] = useState<string|null>(null)
   const [cart,setCart] = useState<Cart|null>(null)
   const [user,setUser] = useState<SessionUser|null>(null)
   const [busy,setBusy] = useState(false)
+  const [favoriteBusy,setFavoriteBusy] = useState(false)
   const [notice,setNotice] = useState('')
   const [loading,setLoading] = useState(true)
+  const [favoritesLoading,setFavoritesLoading] = useState(false)
   const [menuOpen,setMenuOpen] = useState(false)
   const [language,setLanguage] = useState<Language>(()=>localStorage.getItem('language')==='en'?'en':'bn')
   const [theme,setTheme] = useState<'light'|'dark'>(()=>localStorage.getItem('theme')==='dark'?'dark':'light')
@@ -37,6 +41,8 @@ function App() {
     brandSubtitle:'আপনার এলাকার বাজার', search:'পণ্য বা দোকান খুঁজুন...', selectArea:'এলাকা নির্বাচন',
     stores:'দোকান', orders:'অর্ডার', seller:'দোকানদার', inventory:'ইনভেন্টরি', apply:'দোকান আবেদন',
     delivery:'ডেলিভারি', admin:'অ্যাডমিন', account:'অ্যাকাউন্ট', cart:'কার্ট',
+    favorites:'পছন্দের তালিকা', favoritesHeading:'আমার পছন্দের পণ্য', emptyFavorites:'এখনো পছন্দের তালিকায় কিছু নেই।',
+    loginFavorites:'পছন্দের তালিকা দেখতে লগইন করুন।', addFavorite:'পছন্দের তালিকায় যোগ করুন', removeFavorite:'তালিকা থেকে সরান',
     menu:'মেনু খুলুন', darkMode:'ডার্ক মোড চালু করুন', lightMode:'লাইট মোড চালু করুন',
     heroEyebrow:'স্থানীয় বাজারের স্মার্ট সমাধান', heroTitle:'আপনার এলাকার বাজার,',
     heroTitleEm:'এখন আপনার হাতেই।', heroDescription:'কাছের দোকান থেকে তাজা বাজার অর্ডার করুন। স্থানীয় দোকান, পরিচিত পণ্য, ঘরে পৌঁছে দেওয়ার সুবিধা।',
@@ -55,6 +61,8 @@ function App() {
     brandSubtitle:'Your neighborhood marketplace', search:'Search products or shops...', selectArea:'Select area',
     stores:'Stores', orders:'Orders', seller:'For sellers', inventory:'Inventory', apply:'Apply as a shop',
     delivery:'Delivery', admin:'Admin', account:'Account', cart:'Cart',
+    favorites:'Favorites', favoritesHeading:'My favorite products', emptyFavorites:'Your favorites list is empty.',
+    loginFavorites:'Log in to view your favorites.', addFavorite:'Add to favorites', removeFavorite:'Remove from favorites',
     menu:'Open navigation menu', darkMode:'Switch to dark mode', lightMode:'Switch to light mode',
     heroEyebrow:'SMART LOCAL GROCERY', heroTitle:'Your neighborhood market,',
     heroTitleEm:'right at your fingertips.', heroDescription:'Order fresh groceries and everyday essentials from trusted shops nearby, with convenient ordering and home delivery.',
@@ -99,7 +107,14 @@ function App() {
     if (!localStorage.getItem('access')) return
     try { const r=await api.get('/cart/'); setCart(r.data) } catch {}
   }
-  useEffect(()=>{load(); refreshCart()},[])
+  async function refreshFavorites() {
+    if (!localStorage.getItem('access')) { setFavorites([]); return }
+    setFavoritesLoading(true)
+    try { const r=await api.get('/favorites/'); setFavorites(r.data.results || r.data) }
+    catch { setNotice(language==='bn'?'পছন্দের তালিকা লোড করা যায়নি।':'Could not load favorites.') }
+    finally { setFavoritesLoading(false) }
+  }
+  useEffect(()=>{load(); refreshCart(); refreshFavorites()},[])
   useEffect(()=>{
     if(!localStorage.getItem('access')) return
     api.get('/auth/me/').then(response=>setUser(response.data)).catch(()=>setUser(null))
@@ -131,6 +146,27 @@ function App() {
     } catch(e:any) { setNotice(e.response?.data?.detail || 'পণ্য যোগ করা যায়নি।') }
     finally {setBusy(false)}
   }
+  async function toggleFavorite(p:Product) {
+    if (!localStorage.getItem('access')) { navigate('/login'); return }
+    const saved=favorites.find(item=>item.shop_product===p.id)
+    setFavoriteBusy(true)
+    try {
+      if (saved) {
+        await api.delete(`/favorites/${saved.id}/`)
+        setFavorites(current=>current.filter(item=>item.id!==saved.id))
+      } else {
+        const response=await api.post('/favorites/',{shop_product:p.id})
+        setFavorites(current=>current.some(item=>item.id===response.data.id)?current:[...current,response.data])
+      }
+    } catch(e:any) { setNotice(e.response?.data?.detail || (language==='bn'?'পছন্দের তালিকা আপডেট করা যায়নি।':'Could not update favorites.')) }
+    finally {setFavoriteBusy(false)}
+  }
+  async function removeFavorite(id:number) {
+    try {
+      await api.delete(`/favorites/${id}/`)
+      setFavorites(current=>current.filter(item=>item.id!==id))
+    } catch(e:any) { setNotice(e.response?.data?.detail || (language==='bn'?'পছন্দের তালিকা আপডেট করা যায়নি।':'Could not update favorites.')) }
+  }
   async function clearCart() { await api.delete('/cart/'); await refreshCart() }
   async function logout() { localStorage.clear(); setCart(null); setUser(null); navigate('/') }
   const count = cart?.items.reduce((n,i)=>n+Number(i.quantity),0) || 0
@@ -142,6 +178,7 @@ function App() {
       <button type="button" className="nav-toggle" aria-label={copy.menu} aria-expanded={menuOpen} onClick={()=>setMenuOpen(open=>!open)}><Menu size={19}/></button>
       <nav className={menuOpen?'is-open':''} aria-label={language==='bn'?'প্রধান নেভিগেশন':'Main navigation'}>
         <Link to="/shops" onClick={()=>setMenuOpen(false)}>{copy.stores}</Link>
+        <Link to="/favorites" onClick={()=>setMenuOpen(false)}>{copy.favorites}</Link>
         <Link to="/orders" onClick={()=>setMenuOpen(false)}>{copy.orders}</Link>
         <Link to="/shopkeeper" onClick={()=>setMenuOpen(false)}>{copy.seller}</Link>
         {user?.role==='SHOPKEEPER'&&<><Link to="/shopkeeper/inventory" onClick={()=>setMenuOpen(false)}>{copy.inventory}</Link><Link to="/shopkeeper/apply" onClick={()=>setMenuOpen(false)}>{copy.apply}</Link></>}
@@ -161,19 +198,59 @@ function App() {
         <section className="hero"><div className="hero-copy">        <span className="eyebrow">{copy.heroEyebrow}</span><h1>{copy.heroTitle}<br/><em>{copy.heroTitleEm}</em></h1><p>{copy.heroDescription}</p><div className="hero-actions"><a className="primary-btn" href="#products">{copy.shopNow} <ShoppingBasket size={18}/></a><Link to="/shops" className="secondary-btn">{copy.browseStores}</Link></div><div className="trust"><span>✓ {copy.trusted}</span><span>✓ {copy.fastDelivery}</span><span>✓ {copy.cashDelivery}</span></div></div><div className="hero-art"><div className="hero-circle"></div><img src="https://images.unsplash.com/photo-1542838132-92c53300491e?w=1000&auto=format&fit=crop&q=85" alt={language==='bn'?'স্থানীয় বাজারের তাজা শাকসবজি':'Fresh vegetables from a local market'}/><div className="floating-card"><b>{language==='bn'?'তাজা বাজার':'Fresh groceries'}</b><small>{language==='bn'?'আপনার পাশের দোকান থেকে':'From shops near you'}</small></div></div></section>
         <section className="stats"><div><b>{shops.length}+</b><span>{copy.localStores}</span></div><div><b>{products.length}+</b><span>{copy.products}</span></div><div><b>{language==='bn'?'১টি':'One'}</b><span>{copy.platform}</span></div></section>
         <section className="section"><div className="section-head"><div><span className="eyebrow">{copy.categoriesEyebrow}</span><h2>{copy.categoryHeading}</h2></div><span className="muted">{copy.everyday}</span></div><div className="categories">{categoryOptions.map(category=><button className={`category ${selectedCategory===category.key?'selected':''}`} key={category.key} aria-pressed={selectedCategory===category.key} onClick={()=>setSelectedCategory(current=>current===category.key?null:category.key)} style={{backgroundImage:`linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.88)), url(${categoryImages[category.bn as keyof typeof categoryImages]})`, backgroundSize:'cover', backgroundPosition:'center'}}><span>{category.emoji}</span><b>{language==='bn'?category.bn:category.en}</b></button>)}</div></section>
-        <section className="section" id="products"><div className="section-head"><div><span className="eyebrow">{copy.productsEyebrow}</span><h2>{copy.productsHeading}</h2></div><span className="muted">{area}</span></div>{loading?<div className="product-grid" aria-busy="true" aria-label={language==='bn'?'পণ্য লোড হচ্ছে':'Loading products'}>{Array.from({length:8},(_,index)=><div className="product-skeleton" key={index}><div/><span/><span/></div>)}</div>:<><div className="product-grid">{visibleProducts.map(p=><article className="product-card" key={p.id}><div className="product-image">{p.image_url?<img loading="lazy" src={p.image_url} alt={p.product_name}/>:<span>🛒</span>}<small>{p.category_name}</small></div><div className="product-info"><span className="muted shop-name"><Store size={13}/>{p.shop_name}</span><h3>{p.product_name_bn || p.product_name}</h3><p className="muted">{p.product_name} · {p.unit}</p><div className="product-bottom"><b>৳{Number(p.price).toFixed(2)}</b><button disabled={busy} onClick={()=>addToCart(p)} aria-label={language==='bn'?'কার্টে যোগ করুন':'Add to cart'}><Plus size={18}/></button></div></div></article>)}</div>{visibleProducts.length===0&&<div className="empty"><Package size={32}/><h3>{copy.noProducts}</h3><p>{copy.tryAnother}</p></div>}</>}</section>
+        <section className="section" id="products">
+          <div className="section-head"><div><span className="eyebrow">{copy.productsEyebrow}</span><h2>{copy.productsHeading}</h2></div><span className="muted">{area}</span></div>
+          {loading
+            ? <div className="product-grid" aria-busy="true" aria-label={language==='bn'?'পণ্য লোড হচ্ছে':'Loading products'}>{Array.from({length:8},(_,index)=><div className="product-skeleton" key={index}><div/><span/><span/></div>)}</div>
+            : <>
+              <div className="product-grid">{visibleProducts.map(p=>{
+                const favorite=favorites.some(item=>item.shop_product===p.id)
+                return <article className="product-card" key={p.id}>
+                  <div className="product-image">{p.image_url?<img loading="lazy" src={p.image_url} alt={p.product_name}/>:<span>🛒</span>}<small>{p.category_name}</small></div>
+                  <div className="product-info">
+                    <span className="muted shop-name"><Store size={13}/>{p.shop_name}</span>
+                    <h3>{p.product_name_bn || p.product_name}</h3>
+                    <p className="muted">{p.product_name} · {p.unit}</p>
+                    <div className="product-bottom">
+                      <b>৳{Number(p.price).toFixed(2)}</b>
+                      <div className="product-actions">
+                        <button type="button" className={`favorite-toggle ${favorite?'selected':''}`} disabled={favoriteBusy} aria-label={favorite?copy.removeFavorite:copy.addFavorite} aria-pressed={favorite} onClick={()=>toggleFavorite(p)}><Heart size={17} fill={favorite?'currentColor':'none'}/></button>
+                        <button type="button" disabled={busy} onClick={()=>addToCart(p)} aria-label={language==='bn'?'কার্টে যোগ করুন':'Add to cart'}><Plus size={18}/></button>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              })}</div>
+              {visibleProducts.length===0&&<div className="empty"><Package size={32}/><h3>{copy.noProducts}</h3><p>{copy.tryAnother}</p></div>}
+            </>}
+        </section>
         <section className="section"><div className="section-head"><div><span className="eyebrow">{copy.nearbyEyebrow}</span><h2>{copy.nearbyHeading}</h2></div><Link to="/shops" className="text-link">{copy.allStores}</Link></div>{visibleShops.length===0?<div className="empty"><Store size={30}/><h3>{copy.noStores}</h3></div>:<div className="shop-grid">{visibleShops.map(s=><div className="shop-card" key={s.id}><div className="shop-avatar"><Store size={26}/></div><div><h3>{s.name}</h3><p className="muted">{s.area_name} · {s.address}</p><small>{language==='bn'?'ডেলিভারি':'Delivery'} ৳{s.delivery_fee} · {language==='bn'?'সর্বনিম্ন':'Min.'} ৳{s.minimum_order}</small></div></div>)}</div>}</section>
         <section className="partner"><div><span className="eyebrow">{copy.partnerEyebrow}</span><h2>{copy.partnerHeading}</h2><p>{copy.partnerDescription}</p><Link className="light-btn" to="/shopkeeper/apply">{copy.joinStore}</Link></div><div className="partner-icon">🏪</div></section>
       </main>}/>
       <Route path="/shops" element={<main className="page"><h1>{copy.nearbyHeading}</h1>{visibleShops.length===0?<div className="empty"><Store size={30}/><h3>{copy.noStores}</h3></div>:<div className="shop-grid">{visibleShops.map(s=><div className="shop-card" key={s.id}><div className="shop-avatar"><Store/></div><div><h3>{s.name}</h3><p>{s.area_name} · {s.address}</p></div></div>)}</div>}</main>}/>
-      <Route path="/register" element={<RegisterPage onRegistered={async(username,password)=>{await login(username,password);await refreshCart();const profile=await api.get('/auth/me/');setUser(profile.data);navigate("/account")}}/>}/>
+      <Route path="/favorites" element={<main className="page">
+        <div className="page-heading"><div><span className="eyebrow">ELAKABAZAR</span><h1>{copy.favoritesHeading}</h1></div></div>
+        {!localStorage.getItem('access')
+          ? <div className="empty"><Heart size={32}/><p>{copy.loginFavorites}</p><Link className="primary-btn" to="/login">{language==='bn'?'লগইন':'Log in'}</Link></div>
+          : favoritesLoading
+            ? <p aria-live="polite">{language==='bn'?'পছন্দের তালিকা লোড হচ্ছে…':'Loading favorites…'}</p>
+            : favorites.length===0
+              ? <div className="empty"><Heart size={32}/><p>{copy.emptyFavorites}</p><Link className="primary-btn" to="/">{copy.shopNow}</Link></div>
+              : <div className="product-grid">{favorites.map(item=><article className="product-card" key={item.id}>
+                <div className="product-image">{item.image_url?<img loading="lazy" src={item.image_url} alt={item.product_name}/>:<span>🛒</span>}</div>
+                <div className="product-info"><span className="muted shop-name"><Store size={13}/>{item.shop_name}</span><h3>{item.product_name_bn||item.product_name}</h3>
+                  <div className="product-bottom"><b>৳{Number(item.price).toFixed(2)}</b><button type="button" className="favorite-toggle selected" onClick={()=>removeFavorite(item.id)} aria-label={copy.removeFavorite}><Heart size={17} fill="currentColor"/></button></div>
+                </div>
+              </article>)}</div>}
+      </main>}/>
+      <Route path="/register" element={<RegisterPage onRegistered={async(username,password)=>{await login(username,password);await refreshCart();await refreshFavorites();const profile=await api.get('/auth/me/');setUser(profile.data);navigate("/account")}}/>}/>
       <Route path="/account" element={<AccountPage/>}/>
       <Route path="/orders" element={<CustomerOrdersPage/>}/>
       <Route path="/shopkeeper/inventory" element={<ShopkeeperInventoryPage/>}/>
       <Route path="/shopkeeper/apply" element={<ShopkeeperApplicationPage/>}/>
       <Route path="/delivery" element={<DeliveryAgentPage/>}/>
       <Route path="/admin" element={<AdminDashboardPage/>}/>
-      <Route path="/login" element={<Login onLogin={async(u)=>{await login(u.username,u.password);await refreshCart();const profile=await api.get('/auth/me/');setUser(profile.data);navigate("/")}}/>}/>
+      <Route path="/login" element={<Login onLogin={async(u)=>{await login(u.username,u.password);await refreshCart();await refreshFavorites();const profile=await api.get('/auth/me/');setUser(profile.data);navigate("/")}}/>}/>
       <Route path="/cart" element={<CartPage cart={cart} refresh={refreshCart} clear={clearCart}/>}/>
       <Route path="/shopkeeper" element={<ShopkeeperPage/>}/>
       <Route path="*" element={<main className="page"><h1>পৃষ্ঠা পাওয়া যায়নি</h1><Link to="/">হোমে ফিরুন</Link></main>}/>

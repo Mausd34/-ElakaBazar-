@@ -97,6 +97,14 @@ class CartItem(models.Model):
     class Meta:
         constraints = [models.UniqueConstraint(fields=["cart", "shop_product"], name="unique_cart_shop_product")]
 
+class Favorite(models.Model):
+    customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="favorites")
+    shop_product = models.ForeignKey(ShopProduct, on_delete=models.CASCADE, related_name="favorites")
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["customer", "shop_product"], name="unique_customer_favorite")]
+        ordering = ["-created_at"]
+
 class Order(models.Model):
     class Status(models.TextChoices):
         PLACED = "PLACED", "Placed"

@@ -2,7 +2,7 @@ from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from rest_framework.test import APIClient
-from .models import Area, Address, Shop, Category, Product, ShopProduct, Order, OrderItem, OrderStatusHistory
+from .models import Area, Address, Favorite, Shop, Category, Product, ShopProduct, Order, OrderItem, OrderStatusHistory
 
 User = get_user_model()
 
@@ -55,6 +55,20 @@ class CoreMarketplaceAPITests(TestCase):
         self.client.force_authenticate(self.other_customer)
         response = self.client.get(f"/api/v1/orders/{self.order.id}/")
         self.assertEqual(response.status_code, 404)
+
+    def test_customer_can_manage_only_own_favorites(self):
+        self.client.force_authenticate(self.customer)
+        created = self.client.post("/api/v1/favorites/", {"shop_product": self.shop_product.id}, format="json")
+        repeated = self.client.post("/api/v1/favorites/", {"shop_product": self.shop_product.id}, format="json")
+        self.assertEqual(created.status_code, 201, created.data)
+        self.assertEqual(repeated.status_code, 200, repeated.data)
+        self.assertEqual(Favorite.objects.filter(customer=self.customer).count(), 1)
+
+        self.client.force_authenticate(self.other_customer)
+        listing = self.client.get("/api/v1/favorites/")
+        forbidden_delete = self.client.delete(f"/api/v1/favorites/{created.data['id']}/")
+        self.assertEqual(listing.data["results"], [])
+        self.assertEqual(forbidden_delete.status_code, 404)
 
     def test_shopkeeper_only_sees_own_shops_and_inventory(self):
         self.client.force_authenticate(self.seller)

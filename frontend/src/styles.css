@@ -143,3 +143,9 @@ html[data-theme="dark"] .profile-edit-form{background:#18231b;border-color:#2b3b
 html[data-theme="dark"] .profile-edit-form label{color:#e5eee7}
 html[data-theme="dark"] .profile-edit-form input{background:#101812;border-color:#34483a;color:#e5eee7}
 @media(max-width:560px){.profile-edit-form{grid-template-columns:1fr;padding:16px}.profile-edit-form button{grid-column:auto}}
+
+.product-actions{display:flex;gap:8px}
+.product-actions button{border:0}
+.product-actions .favorite-toggle{background:#fff1f2;color:#b4233c}
+.product-actions .favorite-toggle.selected{background:#ffe3e7}
+html[data-theme="dark"] .product-actions .favorite-toggle{background:#3a2530;color:#ff9daf}

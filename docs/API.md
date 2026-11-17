@@ -28,6 +28,9 @@ Base: `/api/v1/`
 - `DELETE /cart/` — clear cart
 - `PATCH /cart/items/<id>/` — update cart quantity
 - `DELETE /cart/items/<id>/` — remove a cart item
+- `GET /favorites/` — list the authenticated customer's saved products
+- `POST /favorites/` — save a product (`shop_product`); adding an existing favorite is idempotent
+- `DELETE /favorites/<id>/` — remove one of the authenticated customer's saved products
 - `POST /checkout/` — place a COD order (`address`); the server validates area, minimum order and stock
 
 ## Customer orders

@@ -2,11 +2,11 @@ from decimal import Decimal, InvalidOperation
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
-from rest_framework import generics, permissions, status, viewsets
+from rest_framework import generics, mixins, permissions, status, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import User, Area, Address, Shop, Category, Product, ShopProduct, Cart, CartItem, Order, OrderItem, OrderStatusHistory, Review
-from .serializers import RegisterSerializer, UserSerializer, AreaSerializer, AddressSerializer, ShopSerializer, CategorySerializer, ProductCatalogSerializer, ShopProductSerializer, CartSerializer, OrderSerializer, ReviewSerializer
+from .models import User, Area, Address, Shop, Category, Product, ShopProduct, Cart, CartItem, Favorite, Order, OrderItem, OrderStatusHistory, Review
+from .serializers import RegisterSerializer, UserSerializer, AreaSerializer, AddressSerializer, ShopSerializer, CategorySerializer, ProductCatalogSerializer, ShopProductSerializer, CartSerializer, FavoriteSerializer, OrderSerializer, ReviewSerializer
 from .permissions import IsShopkeeper, IsDeliveryAgent
 
 class RegisterView(generics.CreateAPIView):
@@ -148,6 +148,23 @@ class CartItemDetail(APIView):
         cart = item.cart; item.delete()
         if not cart.items.exists(): cart.shop = None; cart.save()
         return Response(CartSerializer(cart).data)
+
+class FavoriteViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = FavoriteSerializer
+    def get_queryset(self):
+        return Favorite.objects.filter(customer=self.request.user).select_related("shop_product__product", "shop_product__shop")
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        favorite, created = Favorite.objects.get_or_create(
+            customer=request.user,
+            shop_product=serializer.validated_data["shop_product"],
+        )
+        return Response(
+            self.get_serializer(favorite).data,
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
 
 class CheckoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]

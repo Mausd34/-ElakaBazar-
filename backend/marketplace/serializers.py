@@ -1,6 +1,6 @@
 from decimal import Decimal
 from rest_framework import serializers
-from .models import User, Area, Address, Shop, Category, Product, ShopProduct, Cart, CartItem, Order, OrderItem, OrderStatusHistory, Review
+from .models import User, Area, Address, Shop, Category, Product, ShopProduct, Cart, CartItem, Favorite, Order, OrderItem, OrderStatusHistory, Review
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
@@ -92,6 +92,18 @@ class CartSerializer(serializers.ModelSerializer):
     items = CartItemSerializer(many=True, read_only=True)
     shop_name = serializers.CharField(source="shop.name", read_only=True)
     class Meta: model = Cart; fields = ["id", "shop", "shop_name", "items"]
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    shop_product = serializers.PrimaryKeyRelatedField(queryset=ShopProduct.objects.filter(shop__status=Shop.Status.APPROVED))
+    product_name = serializers.CharField(source="shop_product.product.name", read_only=True)
+    product_name_bn = serializers.CharField(source="shop_product.product.name_bn", read_only=True)
+    shop_name = serializers.CharField(source="shop_product.shop.name", read_only=True)
+    image_url = serializers.CharField(source="shop_product.product.image_url", read_only=True)
+    price = serializers.DecimalField(source="shop_product.price", max_digits=10, decimal_places=2, read_only=True)
+    class Meta:
+        model = Favorite
+        fields = ["id", "shop_product", "product_name", "product_name_bn", "shop_name", "image_url", "price", "created_at"]
+        read_only_fields = ["id", "created_at"]
 
 class OrderItemSerializer(serializers.ModelSerializer):
     class Meta: model = OrderItem; fields = ["product_name", "unit", "quantity", "unit_price", "line_total"]

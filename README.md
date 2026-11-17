@@ -129,6 +129,7 @@ The repository contains the following implemented backend and web application fo
 | Local discovery | Active areas, approved shops and area-based shop/product filtering |
 | Catalogue | Categories, products and shop-specific prices/stock |
 | Cart | Authenticated cart, quantity updates and single-shop cart restriction |
+| Favorites | Customer-owned saved products with add/remove controls |
 | Checkout | COD order creation with stock checks and minimum-order validation |
 | Order workflow | Customer order history and shopkeeper accept/reject/prepare/ready actions |
 | Delivery workflow | Admin assignment and delivery-agent pickup/completion endpoints |
