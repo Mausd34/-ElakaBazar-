@@ -76,8 +76,8 @@ The repository contains the following implemented backend and web application fo
 | Order workflow | Customer order history and shopkeeper accept/reject/prepare/ready actions |
 | Delivery workflow | Admin assignment and delivery-agent pickup/completion endpoints |
 | Customer orders | Order history, order details, delivery address and status timeline in the web client |
-| Seller inventory | Shopkeeper-owned shop list, catalogue selection, price, stock and availability management |
-| Reviews | Review creation endpoint and rating model |
+| Seller inventory | Shopkeeper-owned shop list, catalogue selection, price, stock and availability management; shop application with admin approval |
+| Reviews | Review creation endpoint and rating model |\n| Admin workspace | Platform summary, pending-shop approval/rejection/suspension, order oversight, delivery-agent assignment and master catalogue product creation |\n| Delivery workspace | Assigned-job list, customer/address details, pickup and COD delivery completion |
 | Web client | React + TypeScript storefront with product browsing, search, login, registration, account profile, cart and checkout screens |
 | Mobile client | Expo / React Native project scaffold |
 
@@ -319,7 +319,7 @@ The backend can use the variables in `backend/.env.example`. For manual SQLite d
 | `/shops/<id>/` | GET | Retrieve a shop |
 | `/products/` | GET | List available shop products; supports filters |
 | `/catalog/products/` | GET | List active catalogue products for seller inventory selection |
-| `/shopkeeper/shops/` | GET | List shops owned by the authenticated shopkeeper |
+| `/shopkeeper/shops/` | GET | List shops owned by the authenticated shopkeeper |\n| `/shopkeeper/shops/apply/` | POST | Submit a shop for admin approval |
 | `/shop-products/manage/` | GET, POST | List and add products for the shopkeeper's own shops |
 | `/shop-products/manage/<id>/` | GET, PUT, PATCH, DELETE | Manage an owned shop product; shop ownership is validated |
 | `/cart/` | GET, POST, DELETE | Read, add to and clear the current cart |
@@ -332,7 +332,7 @@ The backend can use the variables in `backend/.env.example`. For manual SQLite d
 | `/shopkeeper/orders/<uuid>/<action>/` | POST | Shopkeeper order actions |
 | `/delivery/jobs/` | GET | List jobs assigned to the delivery agent |
 | `/delivery/jobs/<uuid>/<action>/` | POST | Pickup or complete a delivery |
-| `/admin/orders/<uuid>/assign/` | POST | Assign a delivery agent (admin) |
+| `/admin/overview/` | GET | Admin dashboard summary (staff only) |\n| `/admin/shops/` | GET | List shops for review (staff only) |\n| `/admin/shops/<id>/<action>/` | POST | Approve, reject or suspend a shop (staff only) |\n| `/admin/orders/` | GET | List all orders (staff only) |\n| `/admin/delivery-agents/` | GET | List active delivery agents (staff only) |\n| `/admin/products/` | POST | Add master catalogue product (staff only) |\n| `/admin/orders/<uuid>/assign/` | POST | Assign a delivery agent (admin) |
 | `/reviews/` | POST | Create a review |
 
 Authenticated requests use:
