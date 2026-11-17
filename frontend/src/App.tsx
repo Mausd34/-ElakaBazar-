@@ -6,6 +6,8 @@ import RegisterPage from './pages/RegisterPage'
 import AccountPage from './pages/AccountPage'
 import CustomerOrdersPage from './pages/CustomerOrdersPage'
 import ShopkeeperInventoryPage from './pages/ShopkeeperInventoryPage'
+import DeliveryAgentPage from './pages/DeliveryAgentPage'
+import AdminDashboardPage from './pages/AdminDashboardPage'
 
 type Shop = { id:number; name:string; area_name:string; address:string; delivery_fee:string; minimum_order:string }
 type Product = { id:number; shop:number; shop_name:string; product:number; product_name:string; product_name_bn:string; unit:string; image_url:string; category_name:string; price:string; stock:string }
@@ -65,7 +67,7 @@ function App() {
       <Link to="/" className="brand"><span className="brand-icon"><ShoppingBasket size={24}/></span><span>Elaka<span>Bazar</span><small>আপনার এলাকার বাজার</small></span></Link>
       <label className="location"><MapPin size={17}/><select value={area} onChange={e=>setArea(e.target.value)}>{areas.map(a=><option key={a.id}>{a.name}</option>)}</select></label>
       <div className="searchbox"><Search size={19}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="পণ্য বা দোকান খুঁজুন..."/></div>
-      <nav><Link to="/shops">দোকান</Link><Link to="/orders">অর্ডার</Link><Link to="/shopkeeper">দোকানদার</Link><Link to="/shopkeeper/inventory">ইনভেন্টরি</Link></nav>
+      <nav><Link to="/shops">দোকান</Link><Link to="/orders">অর্ডার</Link><Link to="/shopkeeper">দোকানদার</Link><Link to="/shopkeeper/inventory">ইনভেন্টরি</Link><Link to="/delivery">ডেলিভারি</Link><Link to="/admin">অ্যাডমিন</Link></nav>
       <Link to="/account" className="icon-link"><UserRound size={19}/><span>অ্যাকাউন্ট</span></Link>
       <Link to="/cart" className="cart-link"><ShoppingCart size={19}/><span>কার্ট</span><b>{count}</b></Link>
     </header>
@@ -84,6 +86,8 @@ function App() {
       <Route path="/account" element={<AccountPage/>}/>
       <Route path="/orders" element={<CustomerOrdersPage/>}/>
       <Route path="/shopkeeper/inventory" element={<ShopkeeperInventoryPage/>}/>
+      <Route path="/delivery" element={<DeliveryAgentPage/>}/>
+      <Route path="/admin" element={<AdminDashboardPage/>}/>
       <Route path="/login" element={<Login onLogin={async(u)=>{await login(u.username,u.password);await refreshCart();navigate("/")}}/>}/>
       <Route path="/cart" element={<CartPage cart={cart} refresh={refreshCart} clear={clearCart}/>}/>
       <Route path="/shopkeeper" element={<ShopkeeperPage/>}/>
