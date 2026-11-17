@@ -7,7 +7,7 @@ Base: `/api/v1/`
 - `POST /token/` — JWT login (`username`, `password`)
 - `POST /token/refresh/` — refresh JWT
 - `POST /auth/register/` — register a customer (`username`, `phone`, `full_name`, `password`)
-- `GET /auth/me/` — current authenticated user profile
+- `GET /auth/me/` — current authenticated user profile (`id`, `username`, `phone`, `full_name`, `role`, and read-only `is_staff`)
 - `GET /areas/` — active delivery areas
 - `GET /addresses/` — list the current user's addresses
 - `POST /addresses/` — create an address for the current user

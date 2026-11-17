@@ -137,7 +137,7 @@ The repository contains the following implemented backend and web application fo
 | Reviews | Review creation endpoint and rating model |
 | Admin workspace | Platform summary, pending-shop approval/rejection/suspension, order oversight, delivery-agent assignment and master catalogue product creation |
 | Delivery workspace | Assigned-job list, customer/address details, pickup and COD delivery completion |
-| Web client | React + TypeScript storefront with product browsing, search, login, registration, account profile, cart and checkout screens |
+| Web client | Responsive React + TypeScript storefront with Bengali/English homepage and navigation controls, persistent light/dark theme, product browsing, search, login, registration, account profile, cart and checkout screens |
 | Mobile client | Expo / React Native project scaffold |
 
 **Important:** A repository feature or API endpoint does not automatically mean a complete, production-tested user experience. The mobile app, end-to-end flows, payment integrations, delivery operations and production deployment still require further implementation and verification.

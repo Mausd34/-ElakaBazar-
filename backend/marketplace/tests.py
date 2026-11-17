@@ -134,6 +134,15 @@ class AdminAndDeliveryWorkflowTests(TestCase):
         self.shop.refresh_from_db()
         self.assertEqual(self.shop.status, Shop.Status.APPROVED)
 
+    def test_profile_includes_read_only_staff_flag_for_navigation(self):
+        self.client.force_authenticate(self.admin)
+        admin_profile = self.client.get("/api/v1/auth/me/")
+        self.assertTrue(admin_profile.data["is_staff"])
+
+        self.client.force_authenticate(self.customer)
+        customer_profile = self.client.get("/api/v1/auth/me/")
+        self.assertFalse(customer_profile.data["is_staff"])
+
     def test_non_admin_cannot_access_admin_dashboard(self):
         self.client.force_authenticate(self.customer)
         response = self.client.get("/api/v1/admin/overview/")
