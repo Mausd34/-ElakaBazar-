@@ -1,212 +1,200 @@
 # ElakaBazar
 
-> **Location-based grocery marketplace for Bangladesh** — connecting customers with neighborhood shops through a unified web and mobile experience.
+**A hyperlocal grocery marketplace concept for Bangladesh.**
 
-![ElakaBazar Hero Banner](assets/banners/hero.png)
+ElakaBazar is a web-first marketplace designed to connect customers with nearby grocery shops. The project aims to make everyday shopping more convenient while helping neighborhood retailers reach customers beyond their physical storefronts.
 
-> 📸 **Add your own banner:** Place a wide hero image (recommended 1200×300 px) at `assets/banners/hero.png`.
+<p align="center">
+  <img src="assets/banners/hero.svg" alt="ElakaBazar project banner" width="100%" />
+</p>
 
+<p align="center">
+  <strong>Local shops. Everyday essentials. One neighbourhood marketplace.</strong>
+</p>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Django](https://img.shields.io/badge/Django-5.1%2B-green?logo=django)](https://www.djangoproject.com/)
-[![React](https://img.shields.io/badge/React-18-blue?logo=react)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue?logo=typescript)](https://www.typescriptlang.org/)
-[![Expo](https://img.shields.io/badge/Expo-52-black?logo=expo)](https://expo.dev/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue?logo=postgresql)](https://www.postgresql.org/)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker)](https://www.docker.com/)
+<p align="center">
+  <a href="https://github.com/Mausd34/-ElakaBazar-/issues">Report an issue</a> ·
+  <a href="docs/API.md">API reference</a> ·
+  <a href="docs/DEPLOYMENT.md">Deployment checklist</a>
+</p>
 
 ---
 
-## Table of Contents
+## Table of contents
 
-- [Overview](#overview)
-- [Screenshots & Demo](#screenshots--demo)
-- [Key Features](#key-features)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Prerequisites](#prerequisites)
-- [Quick Start (Docker)](#quick-start-docker)
-- [Manual Setup](#manual-setup)
-  - [Backend](#backend)
-  - [Frontend (Web)](#frontend-web)
-  - [Mobile (Expo)](#mobile-expo)
-- [Environment Variables](#environment-variables)
-- [API Documentation](#api-documentation)
-- [Deployment](#deployment)
+- [Why ElakaBazar?](#why-elakabazar)
+- [Project goals](#project-goals)
+- [Current capabilities](#current-capabilities)
+- [Technology stack](#technology-stack)
+- [System architecture](#system-architecture)
+- [Repository structure](#repository-structure)
+- [Getting started](#getting-started)
+  - [Option 1: Docker Compose](#option-1-docker-compose-recommended)
+  - [Option 2: Run manually](#option-2-run-manually)
+- [Environment configuration](#environment-configuration)
+- [API overview](#api-overview)
+- [Development workflow](#development-workflow)
+- [Security and production readiness](#security-and-production-readiness)
+- [Project status and roadmap](#project-status-and-roadmap)
 - [Contributing](#contributing)
 - [License](#license)
-- [Support](#support)
 
----
+## Why ElakaBazar?
 
-## Overview
+In many Bangladeshi neighbourhoods, customers depend on nearby grocery stores for daily essentials, while small shopkeepers often have limited digital tools for product discovery and order management. ElakaBazar explores a local-first solution to this problem.
 
-**ElakaBazar** is a hyperlocal grocery marketplace designed for Bangladesh. Customers can browse nearby shops, discover products, manage a cart, and place cash-on-delivery orders. Shopkeepers manage their inventory and fulfill orders, while delivery agents handle pickups and drop-offs. Admins oversee users, shops, and deliveries.
+The project is worth running and developing because it provides a practical way to:
 
-The platform is built as a monorepo with four components:
+- **Make local shopping easier:** let customers discover participating shops and available products by area.
+- **Support neighbourhood businesses:** give small retailers a digital channel to present products and receive orders.
+- **Improve convenience:** bring product selection, cart management and order placement into one workflow.
+- **Explore a scalable model:** build and validate the service area by area instead of attempting a nationwide launch immediately.
+- **Learn through a real-world system:** work with authentication, role-based permissions, inventory, order state transitions, APIs and a multi-client architecture.
 
-| Component | Purpose | Technology |
-|-----------|---------|------------|
-| `backend/` | REST API & business logic | Django 5.1 + DRF + PostgreSQL |
-| `frontend/` | Customer web storefront | React 18 + TypeScript + Vite |
-| `mobile/` | Customer / delivery mobile app | Expo (React Native) |
-| `docs/` | API reference & deployment guide | Markdown |
+ElakaBazar is currently a development project/prototype. Its business model and operational assumptions should be validated with customers and shopkeepers before a commercial launch.
 
+## Project goals
 
-## Screenshots & Demo
+1. Build a location-aware marketplace for local grocery shops.
+2. Provide separate workflows for customers, shopkeepers, delivery agents and administrators.
+3. Keep the system modular so web and mobile clients can use the same backend API.
+4. Start with cash-on-delivery (COD), then evaluate locally suitable payment and delivery integrations.
+5. Pilot in a limited service area, measure real demand and improve from user feedback.
 
-### Web Storefront
+## Current capabilities
 
-| Customer Home | Shop Detail |
-|---------------|-------------|
-| ![Customer Home](assets/screenshots/web-home.svg) | ![Shop Detail](assets/screenshots/web-shop.svg) |
+The repository contains the following implemented backend and web application foundations:
 
-| Cart & Checkout | Order History |
-|-----------------|---------------|
-| ![Cart & Checkout](assets/screenshots/web-cart.svg) | ![Order History](assets/screenshots/web-orders.svg) |
+| Area | Current implementation |
+|---|---|
+| Accounts | Custom user model with Customer, Shopkeeper, Delivery Agent and Admin roles |
+| Authentication | JWT access and refresh token endpoints |
+| Local discovery | Active areas, approved shops and area-based shop/product filtering |
+| Catalogue | Categories, products and shop-specific prices/stock |
+| Cart | Authenticated cart, quantity updates and single-shop cart restriction |
+| Checkout | COD order creation with stock checks and minimum-order validation |
+| Order workflow | Customer order history and shopkeeper accept/reject/prepare/ready actions |
+| Delivery workflow | Admin assignment and delivery-agent pickup/completion endpoints |
+| Reviews | Review creation endpoint and rating model |
+| Web client | React + TypeScript storefront with product browsing, search, login and cart screens |
+| Mobile client | Expo / React Native project scaffold |
 
-### Mobile App (Expo)
+**Important:** A repository feature or API endpoint does not automatically mean a complete, production-tested user experience. The mobile app, end-to-end flows, payment integrations, delivery operations and production deployment still require further implementation and verification.
 
-| Customer App | Shopkeeper Dashboard |
-|--------------|----------------------|
-| ![Mobile Customer](assets/screenshots/mobile-customer.svg) | ![Mobile Shopkeeper](assets/screenshots/mobile-shopkeeper.svg) |
+## Technology stack
 
-| Delivery Agent | Admin Panel |
-|----------------|-------------|
-| ![Mobile Delivery](assets/screenshots/mobile-delivery.svg) | ![Admin Panel](assets/screenshots/admin-panel.svg) |
+| Layer | Technologies |
+|---|---|
+| Backend | Python, Django, Django REST Framework |
+| Authentication | djangorestframework-simplejwt |
+| Database | SQLite by default for local manual setup; PostgreSQL supported through `DATABASE_URL` and Docker Compose |
+| Web frontend | React 18, TypeScript, Vite, React Router, Axios |
+| Mobile foundation | Expo, React Native |
+| Local services | Docker, Docker Compose |
+| Time zone | Asia/Dhaka |
 
-> 📸 **Replace with real screenshots:** The images above are SVG mockups. To add real screenshots, replace the `.svg` files in `assets/screenshots/` with your own PNG/JPG images (recommended: 800×600 px for web, 400×800 px for mobile) and update the filenames above.
+## System architecture
 
-
-## Key Features
-
-### 🛒 Customer
-- Browse shops and products by location/area
-- Product search and category filtering
-- Add-to-cart with quantity management
-- Multiple delivery addresses
-- Cash-on-delivery (COD) checkout
-- Order tracking and order history
-- Shop reviews and ratings
-
-### 🏪 Shopkeeper
-- Register and manage shop profile (hours, delivery fee, minimum order)
-- Add, update, and remove products (shop products)
-- Accept, reject, prepare, and mark orders ready
-- View assigned orders and order details
-
-### 🚚 Delivery Agent
-- View assigned delivery jobs
-- Mark jobs as picked up and completed
-
-### 🛡️ Admin
-- Role-based user management (Customer, Shopkeeper, Delivery Agent, Admin)
-- Approve or reject shop applications
-- Assign delivery agents to orders
-- Full order oversight
-
-### 🔐 Platform
-- JWT authentication (access + refresh tokens)
-- Customer registration and profile (`/auth/me`)
-- Location-based filtering (areas, districts)
-- Role-based permissions
-- CORS configured for web and mobile clients
-
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|------------|
-| **Backend** | Python 3.12, Django 5.1, Django REST Framework |
-| **Authentication** | JWT (`djangorestframework-simplejwt`) |
-| **Database** | PostgreSQL 16 |
-| **CORS / Media** | `django-cors-headers`, Pillow |
-| **Production WSGI** | Gunicorn |
-| **Web Frontend** | React 18, TypeScript, Vite, React Router, Axios, Lucide icons |
-| **Mobile App** | Expo SDK 52, React Native 0.76.5, Axios |
-| **DevOps** | Docker, Docker Compose |
-
-## Project Structure
-
+```text
+                   ElakaBazar
+                       |
+          +------------+------------+
+          |                         |
+      Web client               Mobile client
+   React + TypeScript         Expo / React Native
+          |                         |
+          +------------+------------+
+                       |
+                 REST API (JSON)
+                       |
+             Django + DRF backend
+                       |
+        +--------------+--------------+
+        |              |              |
+      Users         Marketplace      Orders
+     & roles        shops/products   cart/delivery
+                       |
+                Database layer
+             SQLite / PostgreSQL
 ```
+
+The web and mobile clients are intended to communicate with the same versioned API under `/api/v1/`.
+
+## Repository structure
+
+```text
 ElakaBazar/
-├── backend/                 # Django project
-│   ├── config/              # Django settings, URLs, WSGI/ASGI
-│   ├── marketplace/         # Core app (users, shops, products, orders, delivery)
-│   │   ├── models.py        # Data models
-│   │   ├── views.py         # API views
-│   │   ├── serializers.py   # DRF serializers
-│   │   ├── urls.py          # App URL routes
-│   │   ├── permissions.py   # Custom permissions
-│   │   ├── tests.py         # Tests
-│   │   └── management/      # Custom management commands
+├── assets/
+│   ├── banners/              # Project banner artwork
+│   └── screenshots/          # UI mockups / screenshots
+├── backend/
+│   ├── config/               # Django project configuration
+│   ├── marketplace/          # Models, serializers, views, permissions and tests
 │   ├── Dockerfile
 │   ├── manage.py
-│   ├── requirements.txt
-│   ├── .env
-│   └── .env.example
-├── frontend/                # React + Vite web app
+│   └── requirements.txt
+├── frontend/
 │   ├── src/
-│   │   ├── api.ts           # Axios client + auth helpers
-│   │   ├── App.tsx          # Router & app shell
-│   │   ├── main.tsx
-│   │   ├── index.css
-│   │   ├── styles.css
-│   │   └── pages/           # Page components
-│   ├── Dockerfile
-│   ├── index.html
+│   │   ├── pages/
+│   │   ├── App.tsx
+│   │   ├── api.ts
+│   │   └── styles.css
 │   ├── package.json
-│   ├── tsconfig.json
 │   └── vite.config.ts
-├── mobile/                  # Expo (React Native) app
+├── mobile/
 │   ├── App.js
 │   ├── app.json
 │   └── package.json
 ├── docs/
-│   ├── API.md               # API endpoint quick reference
-│   └── DEPLOYMENT.md        # Production deployment checklist
-├── docker-compose.yml       # Multi-service local dev
-├── .env
+│   ├── API.md
+│   └── DEPLOYMENT.md
+├── docker-compose.yml
 ├── .env.example
 └── README.md
 ```
 
-## Prerequisites
+## Getting started
 
-Before you begin, ensure you have the following installed:
+### Prerequisites
 
-- [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/) (recommended for local development)
-- **Or, for manual setup:**
-  - Python 3.12+
-  - Node.js 20+ and npm
-  - PostgreSQL 16+
-  - [Expo CLI](https://docs.expo.dev/) (for mobile)
+For Docker setup:
 
-## Quick Start (Docker)
+- Docker Desktop (Windows/macOS) or Docker Engine
+- Docker Compose v2
 
-The fastest way to run ElakaBazar locally is with Docker Compose. This starts PostgreSQL, the Django backend, and the React frontend.
+For manual setup:
+
+- Python 3.12 or a compatible Python version supported by the installed Django release
+- Node.js and npm
+- Git
+
+### Option 1: Docker Compose (recommended)
+
+From a terminal:
 
 ```bash
-# 1. Clone the repository
-git clone <your-repo-url>
-cd ElakaBazar
+git clone https://github.com/Mausd34/-ElakaBazar-.git
+cd -ElakaBazar-
 
-# 2. Copy environment variables
-cp .env.example .env
+# Create your local environment file
+# Windows PowerShell:
+Copy-Item .env.example .env
 
-# 3. Build and start all services
+# macOS / Linux:
+# cp .env.example .env
+
 docker compose up --build
 ```
 
-Once the containers are healthy:
+When the services start, open:
 
-| Service | URL |
-|---------|-----|
-| Frontend (Web) | http://localhost:5173 |
-| Backend API | http://localhost:8000/api/v1 |
-| Django Admin | http://localhost:8000/admin |
+| Service | Local address |
+|---|---|
+| Web frontend | http://localhost:5173 |
+| Backend API | http://localhost:8000/api/v1/ |
+| Django admin | http://localhost:8000/admin/ |
 
-> The backend container runs migrations automatically on startup. The database persists via a Docker named volume (`postgres_data`).
+The Compose configuration starts PostgreSQL, Django and the Vite development server. The backend container runs database migrations as part of its startup command.
 
 To stop the services:
 
@@ -214,209 +202,209 @@ To stop the services:
 docker compose down
 ```
 
-To stop and remove volumes (⚠️ deletes local database data):
+To stop the services and delete the local PostgreSQL volume (this deletes local database data):
 
 ```bash
 docker compose down -v
 ```
 
+### Option 2: Run manually
 
-## Manual Setup
-
-### Backend
+#### 1. Backend (Django)
 
 ```bash
 cd backend
 
-# Create a virtual environment
 python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
 
-# Install dependencies
+# Windows PowerShell:
+.venv\Scripts\Activate.ps1
+
+# macOS / Linux:
+# source .venv/bin/activate
+
 pip install -r requirements.txt
 
-# Copy environment variables
-cp .env.example .env
-# Edit .env with your local settings (DATABASE_URL, SECRET_KEY, etc.)
+# Optional: copy the backend environment template
+# Windows PowerShell:
+Copy-Item .env.example .env
 
-# Run migrations
+# macOS / Linux:
+# cp .env.example .env
+
 python manage.py migrate
-
-# Start the development server
-python manage.py runserver 0.0.0.0:8000
+python manage.py runserver
 ```
 
-The API will be available at `http://localhost:8000/api/v1/`.
+The backend uses SQLite by default when `DATABASE_URL` is not set. The API is available at http://127.0.0.1:8000/api/v1/.
 
-### Frontend (Web)
+#### 2. Web frontend (React + Vite)
+
+Open a second terminal:
 
 ```bash
 cd frontend
-
-# Install dependencies
 npm install
 
-# Copy environment variables
-cp .env.example .env
-# Edit VITE_API_URL if your backend runs on a different host
+# Optional: create a local frontend environment file
+# Windows PowerShell:
+Copy-Item .env.example .env
 
-# Start the development server
+# macOS / Linux:
+# cp .env.example .env
+
 npm run dev
 ```
 
-The web app will be available at `http://localhost:5173`.
+Open http://localhost:5173/.
 
-To build for production:
+To create a production frontend build:
 
 ```bash
 npm run build
 ```
 
-### Mobile (Expo)
+#### 3. Mobile app (Expo)
+
+Open another terminal:
 
 ```bash
 cd mobile
-
-# Install dependencies
 npm install
-
-# Start the Expo development server
 npx expo start
 ```
 
-- Press `a` to open on Android emulator
-- Press `i` to open on iOS simulator
-- Scan the QR code with the **Expo Go** app on your physical device
+Use the Expo Go app to scan the QR code, or launch an available simulator. When testing on a physical phone, configure the API base URL to use your computer's LAN IP address rather than `localhost`.
 
-> Make sure the mobile app points to your backend's network-accessible URL (not `localhost` when running on a physical device).
+## Environment configuration
 
+Use the example files as templates and create local environment files for your machine. Never put real credentials in Git.
 
-## Environment Variables
+### Root `.env` (Docker Compose)
 
-### Root (`.env`)
+| Variable | Purpose |
+|---|---|
+| `DEBUG` | Django debug mode; use `0` in production |
+| `SECRET_KEY` | Django secret key; generate a private production value |
+| `ALLOWED_HOSTS` | Comma-separated allowed hostnames |
+| `DATABASE_URL` | Database connection URL |
+| `CORS_ALLOWED_ORIGINS` | Allowed browser origins |
+| `VITE_API_URL` | API base URL used by the web client |
 
-Used by Docker Compose and shared across services:
+### Frontend `frontend/.env`
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `DEBUG` | Enable Django debug mode | `1` |
-| `SECRET_KEY` | Django secret key (change in production!) | `replace-this-with-a-long-random-secret` |
-| `ALLOWED_HOSTS` | Allowed Django hostnames | `localhost,127.0.0.1,backend` |
-| `DATABASE_URL` | PostgreSQL connection string | `postgres://elaka:elaka_dev_password@db:5432/elakabazar` |
-| `CORS_ALLOWED_ORIGINS` | Allowed CORS origins | `http://localhost:5173` |
-| `VITE_API_URL` | Frontend API base URL | `http://localhost:8000/api/v1` |
+| Variable | Purpose | Local example |
+|---|---|---|
+| `VITE_API_URL` | Backend API base URL | `http://localhost:8000/api/v1` |
 
-### Backend (`backend/.env`)
+### Backend `backend/.env`
 
-Same variables as above, scoped to the Django service.
+The backend can use the variables in `backend/.env.example`. For manual SQLite development, the default database configuration works without setting `DATABASE_URL`.
 
-### Frontend (`frontend/.env`)
+## API overview
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `VITE_API_URL` | API base URL for axios | `http://localhost:8000/api/v1` |
+**Base URL:** `http://localhost:8000/api/v1/`
 
-> ⚠️ **Never commit real `.env` files.** Only `.env.example` should be tracked in version control.
+| Endpoint | Method | Purpose |
+|---|---|---|
+| `/token/` | POST | Obtain JWT tokens |
+| `/token/refresh/` | POST | Refresh an access token |
+| `/auth/register/` | POST | Register a customer |
+| `/auth/me/` | GET | Get the current authenticated user |
+| `/areas/` | GET | List active areas |
+| `/categories/` | GET | List active categories |
+| `/shops/` | GET | List approved shops; supports area/search filters |
+| `/shops/<id>/` | GET | Retrieve a shop |
+| `/products/` | GET | List available shop products; supports filters |
+| `/cart/` | GET, POST, DELETE | Read, add to and clear the current cart |
+| `/cart/items/<id>/` | PATCH, DELETE | Update or remove a cart item |
+| `/addresses/` | GET, POST, PUT, PATCH, DELETE | Manage the current user's addresses |
+| `/checkout/` | POST | Place a COD order |
+| `/orders/` | GET | List the current customer's orders |
+| `/orders/<uuid>/` | GET | Retrieve an order |
+| `/shopkeeper/orders/` | GET | List orders for the current shopkeeper |
+| `/shopkeeper/orders/<uuid>/<action>/` | POST | Shopkeeper order actions |
+| `/delivery/jobs/` | GET | List jobs assigned to the delivery agent |
+| `/delivery/jobs/<uuid>/<action>/` | POST | Pickup or complete a delivery |
+| `/admin/orders/<uuid>/assign/` | POST | Assign a delivery agent (admin) |
+| `/reviews/` | POST | Create a review |
 
-## API Documentation
+Authenticated requests use:
 
-Full endpoint details are maintained in [`docs/API.md`](docs/API.md).
-
-**Base path:** `/api/v1/`
-
-| Endpoint | Method | Description | Auth |
-|----------|--------|-------------|------|
-| `/token/` | `POST` | JWT login (username, password) | No |
-| `/token/refresh/` | `POST` | Refresh JWT access token | No |
-| `/auth/register/` | `POST` | Customer registration | No |
-| `/auth/me/` | `GET` | Current authenticated user | Yes |
-| `/areas/` | `GET` | List areas | No |
-| `/categories/` | `GET` | List product categories | No |
-| `/shops/` | `GET` | List approved shops (filter by `?area=`) | No |
-| `/shops/<id>/` | `GET` | Shop detail | No |
-| `/products/` | `GET` | List products (filter by `?area=` & `?search=`) | No |
-| `/cart/` | `GET/POST/DELETE` | Current user's cart | Yes |
-| `/cart/items/<id>/` | `PATCH/DELETE` | Update or remove cart item | Yes |
-| `/addresses/` | `GET/POST` | User's delivery addresses | Yes |
-| `/checkout/` | `POST` | Place a COD order | Yes |
-| `/orders/` | `GET` | User's orders | Yes |
-| `/orders/<uuid>/` | `GET` | Order detail | Yes |
-| `/shopkeeper/orders/` | `GET` | Shopkeeper's orders | Yes |
-| `/shopkeeper/orders/<uuid>/<action>/` | `POST` | Accept / reject / preparing / ready | Yes |
-| `/delivery/jobs/` | `GET` | Assigned delivery jobs | Yes |
-| `/delivery/jobs/<uuid>/<action>/` | `POST` | Pickup / complete delivery | Yes |
-| `/reviews/` | `POST` | Create a shop review | Yes |
-
-JWT-protected endpoints require the header:
-
-```
+```http
 Authorization: Bearer <access-token>
 ```
 
-See [`docs/API.md`](docs/API.md) for the complete quick reference.
+See [docs/API.md](docs/API.md) for the concise API reference. The Django URL configuration is the source of truth if this table and implementation differ.
 
-## Deployment
+## Development workflow
 
-See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for the production deployment checklist.
+For a team using GitHub:
 
-**Key production considerations:**
+1. Keep `main` stable; create a feature branch for each task.
+2. Pull the latest changes before starting work.
+3. Keep backend and frontend changes in clearly scoped commits.
+4. Run backend tests with `python manage.py test` from the `backend/` directory.
+5. Build the web client with `npm run build` from `frontend/`.
+6. Open a pull request and describe the change, test evidence and any migration/API impact.
+7. Review before merging.
 
-1. Use a managed PostgreSQL instance and set `DATABASE_URL`.
-2. Set a cryptographically random `SECRET_KEY`.
-3. Set `DEBUG=0` and configure production `ALLOWED_HOSTS`.
-4. Restrict `CORS_ALLOWED_ORIGINS` to your actual domain.
-5. Serve behind HTTPS with Gunicorn (included in `requirements.txt`).
-6. Configure persistent media/object storage for product images.
-7. Schedule automated database backups and restore tests.
-8. Add error monitoring and structured logging.
-9. Integrate SMS OTP and verified merchant payment gateways (beyond COD).
-10. Run migrations and automated tests before every release.
+Suggested branch names:
 
-> **Do not deploy with demo passwords or development database credentials.**
+- `feature/customer-checkout`
+- `feature/shopkeeper-inventory`
+- `fix/cart-validation`
+- `docs/readme-setup`
 
+## Security and production readiness
+
+This repository is a development-stage project, not a production-ready commerce service. Before handling real customers, addresses, orders or payments:
+
+- Remove real `.env` files from version control and rotate any credential that may have been exposed.
+- Add and maintain a root `.gitignore`; do not commit `node_modules/`, Python cache files, virtual environments, local databases or build output.
+- Replace development secrets and database passwords; set `DEBUG=0`.
+- Configure production `ALLOWED_HOSTS`, CORS, HTTPS and secure cookie/security settings.
+- Use managed PostgreSQL, automated backups and a tested restore process.
+- Review authorization, validation, rate limiting, logging and error handling.
+- Add comprehensive automated tests for authentication, permissions, stock changes, checkout and order transitions.
+- Integrate and test payment, SMS/OTP, notifications, delivery operations and persistent product-image storage before offering those services.
+- Perform a security review and pilot with a small group of shops before public launch.
+
+The repository currently includes local development artefacts (including dependency/cache/database files). Clean these from Git history or future commits as part of repository maintenance. Do not assume that adding a README alone makes the application secure or deployable.
+
+## Project status and roadmap
+
+ElakaBazar is under active development. Potential next milestones:
+
+- [ ] Complete and test customer registration and account flows in the web UI.
+- [ ] Complete shopkeeper onboarding, shop approval and inventory management screens.
+- [ ] Complete delivery-agent and admin interfaces.
+- [ ] Improve automated test coverage and add CI checks.
+- [ ] Add reliable product image upload and storage.
+- [ ] Validate the service with real customers and local shopkeepers in a pilot area.
+- [ ] Evaluate SMS verification, notifications and locally appropriate payment providers.
+- [ ] Prepare production deployment, monitoring, backups and operational support.
+
+Roadmap items are plans, not claims that the features are already available.
 
 ## Contributing
 
-Contributions are welcome! Whether it's a bug report, feature request, or pull request, your help makes ElakaBazar better.
+Contributions, bug reports and suggestions are welcome.
 
-1. **Fork** the repository and create your branch from `main`.
-2. **Write** clear, concise commit messages.
-3. **Test** your changes (backend tests + frontend/manual mobile checks).
-4. **Open** a pull request describing what you changed and why.
+1. Fork the repository.
+2. Create a focused branch from `main`.
+3. Make a small, clearly scoped change.
+4. Run relevant tests and builds.
+5. Open a pull request with a clear summary and test notes.
 
-Please follow the existing code style and update documentation when changing APIs.
+For bugs or feature requests, use [GitHub Issues](https://github.com/Mausd34/-ElakaBazar-/issues).
 
 ## License
 
-This project is licensed under the **MIT License** — a permissive open source license that allows you to freely use, modify, and distribute the code.
-
-### What this means
-
-| You may... | You may not... |
-|------------|----------------|
-| ✅ Use the software for commercial purposes | ❌ Hold the authors liable for damages |
-| ✅ Modify and distribute the code | |
-| ✅ Use it for private or internal projects | |
-| ✅ Sublicense and sell copies | |
-
-### Conditions
-
-- Include the original copyright and license notice in all copies or substantial portions of the software.
-- The software is provided **"as is"**, without warranty of any kind.
-
-### Full License Text
-
-View the complete license text in the [LICENSE](LICENSE) file.
+This repository includes an MIT License. See the [LICENSE](LICENSE) file for the complete terms.
 
 ---
 
-## Support
-
-- **Issues:** [GitHub Issues](https://github.com/Mausd34/-ElakaBazar-/issues)
-- **Documentation:** [`docs/`](docs/)
-- **Maintainer:** [Mausd34](https://github.com/Mausd34)
-
----
-
-> Built with ❤️ for local grocery commerce in Bangladesh.
-
+<p align="center">
+  <strong>ElakaBazar — Bringing neighbourhood grocery shopping closer to home.</strong>
+</p>
