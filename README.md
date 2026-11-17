@@ -77,7 +77,9 @@ The repository contains the following implemented backend and web application fo
 | Delivery workflow | Admin assignment and delivery-agent pickup/completion endpoints |
 | Customer orders | Order history, order details, delivery address and status timeline in the web client |
 | Seller inventory | Shopkeeper-owned shop list, catalogue selection, price, stock and availability management; shop application with admin approval |
-| Reviews | Review creation endpoint and rating model |\n| Admin workspace | Platform summary, pending-shop approval/rejection/suspension, order oversight, delivery-agent assignment and master catalogue product creation |\n| Delivery workspace | Assigned-job list, customer/address details, pickup and COD delivery completion |
+| Reviews | Review creation endpoint and rating model |
+| Admin workspace | Platform summary, pending-shop approval/rejection/suspension, order oversight, delivery-agent assignment and master catalogue product creation |
+| Delivery workspace | Assigned-job list, customer/address details, pickup and COD delivery completion |
 | Web client | React + TypeScript storefront with product browsing, search, login, registration, account profile, cart and checkout screens |
 | Mobile client | Expo / React Native project scaffold |
 
@@ -319,7 +321,8 @@ The backend can use the variables in `backend/.env.example`. For manual SQLite d
 | `/shops/<id>/` | GET | Retrieve a shop |
 | `/products/` | GET | List available shop products; supports filters |
 | `/catalog/products/` | GET | List active catalogue products for seller inventory selection |
-| `/shopkeeper/shops/` | GET | List shops owned by the authenticated shopkeeper |\n| `/shopkeeper/shops/apply/` | POST | Submit a shop for admin approval |
+| `/shopkeeper/shops/` | GET | List shops owned by the authenticated shopkeeper |
+| `/shopkeeper/shops/apply/` | POST | Submit a shop for admin approval |
 | `/shop-products/manage/` | GET, POST | List and add products for the shopkeeper's own shops |
 | `/shop-products/manage/<id>/` | GET, PUT, PATCH, DELETE | Manage an owned shop product; shop ownership is validated |
 | `/cart/` | GET, POST, DELETE | Read, add to and clear the current cart |
@@ -332,7 +335,13 @@ The backend can use the variables in `backend/.env.example`. For manual SQLite d
 | `/shopkeeper/orders/<uuid>/<action>/` | POST | Shopkeeper order actions |
 | `/delivery/jobs/` | GET | List jobs assigned to the delivery agent |
 | `/delivery/jobs/<uuid>/<action>/` | POST | Pickup or complete a delivery |
-| `/admin/overview/` | GET | Admin dashboard summary (staff only) |\n| `/admin/shops/` | GET | List shops for review (staff only) |\n| `/admin/shops/<id>/<action>/` | POST | Approve, reject or suspend a shop (staff only) |\n| `/admin/orders/` | GET | List all orders (staff only) |\n| `/admin/delivery-agents/` | GET | List active delivery agents (staff only) |\n| `/admin/products/` | POST | Add master catalogue product (staff only) |\n| `/admin/orders/<uuid>/assign/` | POST | Assign a delivery agent (admin) |
+| `/admin/overview/` | GET | Admin dashboard summary (staff only) |
+| `/admin/shops/` | GET | List shops for review (staff only) |
+| `/admin/shops/<id>/<action>/` | POST | Approve, reject or suspend a shop (staff only) |
+| `/admin/orders/` | GET | List all orders (staff only) |
+| `/admin/delivery-agents/` | GET | List active delivery agents (staff only) |
+| `/admin/products/` | POST | Add master catalogue product (staff only) |
+| `/admin/orders/<uuid>/assign/` | POST | Assign a delivery agent (admin) |
 | `/reviews/` | POST | Create a review |
 
 Authenticated requests use:
@@ -382,10 +391,11 @@ The repository currently includes local development artefacts (including depende
 
 ElakaBazar is under active development. Potential next milestones:
 
-- [ ] Complete and test customer registration and account flows in the web UI.
-- [ ] Complete shopkeeper onboarding, shop approval and inventory management screens.
-- [ ] Complete delivery-agent and admin interfaces.
-- [ ] Improve automated test coverage and add CI checks.
+- [x] Implement customer registration, account view, cart, COD checkout and order tracking foundations.
+- [x] Implement shopkeeper shop applications, admin shop approval and inventory management screens.
+- [x] Implement delivery-agent and admin web workspaces, including delivery assignment and completion.
+- [x] Add backend tests and CI checks for Django and frontend builds.
+- [ ] Add profile editing, full address-book management and customer-facing notification delivery.
 - [ ] Add reliable product image upload and storage.
 - [ ] Validate the service with real customers and local shopkeepers in a pilot area.
 - [ ] Evaluate SMS verification, notifications and locally appropriate payment providers.

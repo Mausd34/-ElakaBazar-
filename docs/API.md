@@ -46,14 +46,22 @@ Base: `/api/v1/`
 - `PATCH /shop-products/manage/<id>/` — update price, stock or availability
 - `DELETE /shop-products/manage/<id>/` — remove a shop product
 
-Shop ownership is checked on inventory writes. A shopkeeper cannot manage another seller's inventory.
+Shop ownership is checked on inventory writes. A shopkeeper cannot manage another seller's inventory. New shops stay pending until approved by an administrator.
 
 ## Delivery and administration
 
-- `GET /delivery/jobs/` — delivery jobs assigned to the authenticated agent
-- `POST /delivery/jobs/<uuid>/<pickup|complete>/` — delivery status action
-- `POST /admin/orders/<uuid>/assign/` — assign a delivery agent (Django staff/admin)
+- `GET /admin/overview/` — staff dashboard counts and completed sales totals
+- `GET /admin/shops/?status=PENDING` — list shops for review (staff only)
+- `POST /admin/shops/<id>/<approve|reject|suspend>/` — moderate a shop (staff only)
+- `GET /admin/orders/` — list all orders (staff only)
+- `GET /admin/delivery-agents/` — list active delivery agents (staff only)
+- `POST /admin/products/` — add a product to the master catalogue (staff only; category must already exist)
+- `POST /admin/orders/<uuid>/assign/` — assign a delivery agent (staff only)
+- `GET /delivery/jobs/` — list jobs assigned to the authenticated delivery agent
+- `POST /delivery/jobs/<uuid>/<pickup|complete>/` — mark an assigned order picked up or delivered
 
-Admin endpoints require a Django staff account (`is_staff=True`); the `ADMIN` role string alone does not grant Django staff permissions.\n\nJWT protected endpoints require `Authorization: Bearer <access-token>`.
+Admin endpoints require a Django staff account (`is_staff=True`); the `ADMIN` role string alone does not grant Django staff permissions.
+
+JWT protected endpoints require `Authorization: Bearer <access-token>`.
 
 The API uses page-number pagination for list endpoints. Responses may be wrapped as `{ "count": ..., "next": ..., "previous": ..., "results": [...] }`.
