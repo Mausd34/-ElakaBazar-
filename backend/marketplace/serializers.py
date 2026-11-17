@@ -48,6 +48,7 @@ class ProductCatalogSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "name_bn", "unit", "category", "category_name", "image_url"]
 
 class ShopProductSerializer(serializers.ModelSerializer):
+    shop = serializers.PrimaryKeyRelatedField(queryset=Shop.objects.all())
     product_name = serializers.CharField(source="product.name", read_only=True)
     product_name_bn = serializers.CharField(source="product.name_bn", read_only=True)
     unit = serializers.CharField(source="product.unit", read_only=True)
@@ -57,7 +58,13 @@ class ShopProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShopProduct
         fields = ["id", "shop", "shop_name", "product", "product_name", "product_name_bn", "unit", "image_url", "category_name", "price", "stock", "is_available", "updated_at"]
-        read_only_fields = ["id", "shop"]
+        read_only_fields = ["id"]
+
+    def validate_shop(self, value):
+        request = self.context.get("request")
+        if request and value.owner_id != request.user.id:
+            raise serializers.ValidationError("You can only manage inventory for your own shop.")
+        return value
 
     def validate_stock(self, value):
         if value < 0:
