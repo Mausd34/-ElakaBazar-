@@ -37,3 +37,10 @@
 .admin-product-form label{display:grid;gap:7px;font-size:12px;font-weight:700;color:#405548}
 .admin-product-form button{margin:0}
 @media(max-width:700px){.admin-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.workflow-grid{grid-template-columns:1fr}.admin-product-form{grid-template-columns:1fr}.workflow-card.compact{align-items:flex-start;flex-direction:column}.assign-control{align-items:flex-start;flex-direction:column;width:100%}.assign-control select{width:100%}}
+
+.shop-application-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;background:#fff;border:1px solid #e9eee8;border-radius:15px;padding:22px}
+.shop-application-form label{display:grid;gap:7px;font-size:12px;font-weight:700;color:#405548}
+.shop-application-form input,.shop-application-form select,.shop-application-form textarea{width:100%;padding:11px;border:1px solid #dfe7df;border-radius:8px;background:#fff;color:#263b2d}
+.shop-application-form label:nth-child(2){grid-column:1/-1}
+.shop-application-form button{width:max-content;margin:0}
+@media(max-width:620px){.shop-application-form{grid-template-columns:1fr;padding:16px}.shop-application-form label:nth-child(2){grid-column:auto}.shop-application-form button{width:100%}}
