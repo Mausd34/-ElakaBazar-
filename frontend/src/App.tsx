@@ -2,6 +2,10 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, Route, Routes, useNavigate } from 'react-router-dom'
 import { ShoppingBasket, MapPin, Search, UserRound, ShoppingCart, Menu, Plus, Minus, Trash2, Store, Package, LogOut } from 'lucide-react'
 import { api, login } from './api'
+import RegisterPage from './pages/RegisterPage'
+import AccountPage from './pages/AccountPage'
+import CustomerOrdersPage from './pages/CustomerOrdersPage'
+import ShopkeeperInventoryPage from './pages/ShopkeeperInventoryPage'
 
 type Shop = { id:number; name:string; area_name:string; address:string; delivery_fee:string; minimum_order:string }
 type Product = { id:number; shop:number; shop_name:string; product:number; product_name:string; product_name_bn:string; unit:string; image_url:string; category_name:string; price:string; stock:string }
@@ -61,8 +65,8 @@ function App() {
       <Link to="/" className="brand"><span className="brand-icon"><ShoppingBasket size={24}/></span><span>Elaka<span>Bazar</span><small>আপনার এলাকার বাজার</small></span></Link>
       <label className="location"><MapPin size={17}/><select value={area} onChange={e=>setArea(e.target.value)}>{areas.map(a=><option key={a.id}>{a.name}</option>)}</select></label>
       <div className="searchbox"><Search size={19}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="পণ্য বা দোকান খুঁজুন..."/></div>
-      <nav><Link to="/shops">দোকান</Link><Link to="/shopkeeper">দোকানদার</Link></nav>
-      <Link to="/login" className="icon-link"><UserRound size={19}/><span>লগইন</span></Link>
+      <nav><Link to="/shops">দোকান</Link><Link to="/orders">অর্ডার</Link><Link to="/shopkeeper">দোকানদার</Link><Link to="/shopkeeper/inventory">ইনভেন্টরি</Link></nav>
+      <Link to="/account" className="icon-link"><UserRound size={19}/><span>অ্যাকাউন্ট</span></Link>
       <Link to="/cart" className="cart-link"><ShoppingCart size={19}/><span>কার্ট</span><b>{count}</b></Link>
     </header>
     {notice && <div className="notice" onClick={()=>setNotice('')}>{notice} <button>×</button></div>}
@@ -76,7 +80,11 @@ function App() {
         <section className="partner"><div><span className="eyebrow">GROW WITH US</span><h2>আপনার দোকান অনলাইনে আনুন</h2><p>ElakaBazar-এর সঙ্গে যুক্ত হয়ে এলাকার আরও কাস্টমারের কাছে পৌঁছান।</p><Link className="light-btn" to="/shopkeeper">দোকান যুক্ত করুন</Link></div><div className="partner-icon">🏪</div></section>
       </main>}/>
       <Route path="/shops" element={<main className="page"><h1>আপনার এলাকার দোকান</h1><div className="shop-grid">{shops.map(s=><div className="shop-card" key={s.id}><div className="shop-avatar"><Store/></div><div><h3>{s.name}</h3><p>{s.area_name} · {s.address}</p></div></div>)}</div></main>}/>
-      <Route path="/login" element={<Login onLogin={async(u)=>{await login(u.username,u.password);await refreshCart();navigate('/')}}/>}/>
+      <Route path="/register" element={<RegisterPage onRegistered={async(username,password)=>{await login(username,password);await refreshCart();navigate("/account")}}/>}/>
+      <Route path="/account" element={<AccountPage/>}/>
+      <Route path="/orders" element={<CustomerOrdersPage/>}/>
+      <Route path="/shopkeeper/inventory" element={<ShopkeeperInventoryPage/>}/>
+      <Route path="/login" element={<Login onLogin={async(u)=>{await login(u.username,u.password);await refreshCart();navigate("/")}}/>}/>
       <Route path="/cart" element={<CartPage cart={cart} refresh={refreshCart} clear={clearCart}/>}/>
       <Route path="/shopkeeper" element={<ShopkeeperPage/>}/>
       <Route path="*" element={<main className="page"><h1>পৃষ্ঠা পাওয়া যায়নি</h1><Link to="/">হোমে ফিরুন</Link></main>}/>
@@ -87,7 +95,7 @@ function App() {
 
 function Login({onLogin}:{onLogin:(u:{username:string;password:string})=>void}) {
  const [username,setUsername]=useState(''); const [password,setPassword]=useState(''); const [error,setError]=useState('')
- return <main className="auth-wrap"><form className="auth-card" onSubmit={async e=>{e.preventDefault();try{await onLogin({username,password})}catch{setError('লগইন হয়নি। ফোন নম্বর ও পাসওয়ার্ড যাচাই করুন।')}}}><span className="eyebrow">WELCOME BACK</span><h1>আপনার অ্যাকাউন্টে লগইন</h1><label>ফোন নম্বর / ইউজারনেম<input required value={username} onChange={e=>setUsername(e.target.value)} placeholder="017XXXXXXXX"/></label><label>পাসওয়ার্ড<input required type="password" value={password} onChange={e=>setPassword(e.target.value)}/></label>{error&&<p className="error">{error}</p>}<button className="primary-btn full">লগইন করুন</button><p className="muted">Demo: 01700000001 / DemoPass123!</p></form></main>
+ return <main className="auth-wrap"><form className="auth-card" onSubmit={async e=>{e.preventDefault();try{await onLogin({username,password})}catch{setError('লগইন হয়নি। ফোন নম্বর ও পাসওয়ার্ড যাচাই করুন।')}}}><span className="eyebrow">WELCOME BACK</span><h1>আপনার অ্যাকাউন্টে লগইন</h1><label>ফোন নম্বর / ইউজারনেম<input required value={username} onChange={e=>setUsername(e.target.value)} placeholder="017XXXXXXXX"/></label><label>পাসওয়ার্ড<input required type="password" value={password} onChange={e=>setPassword(e.target.value)}/></label>{error&&<p className="error">{error}</p>}<button className="primary-btn full">লগইন করুন</button><p className="muted">নতুন ব্যবহারকারী? <Link className="text-link" to="/register">অ্যাকাউন্ট তৈরি করুন</Link></p></form></main>
 }
 function CartPage({cart,refresh,clear}:{cart:Cart|null;refresh:()=>void;clear:()=>void}) {
  const [addresses,setAddresses]=useState<any[]>([]); const [areas,setAreas]=useState<any[]>([]); const [address,setAddress]=useState(''); const [message,setMessage]=useState('')
