@@ -391,10 +391,11 @@ The repository currently includes local development artefacts (including depende
 
 ElakaBazar is under active development. Potential next milestones:
 
-- [ ] Complete and test customer registration and account flows in the web UI.
-- [ ] Complete shopkeeper onboarding, shop approval and inventory management screens.
-- [ ] Complete delivery-agent and admin interfaces.
-- [ ] Improve automated test coverage and add CI checks.
+- [x] Implement customer registration, account view, cart, COD checkout and order tracking foundations.
+- [x] Implement shopkeeper shop applications, admin shop approval and inventory management screens.
+- [x] Implement delivery-agent and admin web workspaces, including delivery assignment and completion.
+- [x] Add backend tests and CI checks for Django and frontend builds.
+- [ ] Add profile editing, full address-book management and customer-facing notification delivery.
 - [ ] Add reliable product image upload and storage.
 - [ ] Validate the service with real customers and local shopkeepers in a pilot area.
 - [ ] Evaluate SMS verification, notifications and locally appropriate payment providers.
