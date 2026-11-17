@@ -80,6 +80,12 @@ class ShopkeeperShops(generics.ListAPIView):
     def get_queryset(self):
         return Shop.objects.filter(owner=self.request.user).select_related("area").order_by("name")
 
+class ShopApplication(generics.CreateAPIView):
+    serializer_class = ShopSerializer
+    permission_classes = [IsShopkeeper]
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user, status=Shop.Status.PENDING)
+
 class ShopProductManageViewSet(viewsets.ModelViewSet):
     serializer_class = ShopProductSerializer
     permission_classes = [IsShopkeeper]
