@@ -72,7 +72,7 @@ class CoreMarketplaceAPITests(TestCase):
             "shop": self.other_shop.id, "product": self.product.id,
             "price": "80.00", "stock": "5"
         }, format="json")
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 400)
 
     def test_shopkeeper_can_add_catalogue_product_to_own_shop(self):
         self.client.force_authenticate(self.seller)
