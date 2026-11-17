@@ -1,10 +1,11 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from .views import RegisterView, MeView, AreaList, AddressViewSet, CategoryList, ShopList, ShopDetail, ProductList, ShopProductManageViewSet, CartView, CartItemDetail, CheckoutView, OrderList, OrderDetail, ShopkeeperOrders, ShopkeeperOrderAction, DeliveryJobs, DeliveryAction, AssignDelivery, ReviewCreate
+from .views import RegisterView, MeView, AreaList, AddressViewSet, CategoryList, ShopList, ShopDetail, CatalogProductList, ShopkeeperShops, ProductList, ShopProductManageViewSet, CartView, CartItemDetail, CheckoutView, OrderList, OrderDetail, ShopkeeperOrders, ShopkeeperOrderAction, DeliveryJobs, DeliveryAction, AssignDelivery, ReviewCreate
 
 router = DefaultRouter()
 router.register("addresses", AddressViewSet, basename="address")
+router.register("shopkeeper/shops", ShopkeeperShops, basename="shopkeeper-shop")
 router.register("shop-products/manage", ShopProductManageViewSet, basename="shop-product-manage")
 
 urlpatterns = [
@@ -17,6 +18,7 @@ urlpatterns = [
     path("shops/", ShopList.as_view()),
     path("shops/<int:pk>/", ShopDetail.as_view()),
     path("products/", ProductList.as_view()),
+    path("catalog/products/", CatalogProductList.as_view()),
     path("cart/", CartView.as_view()),
     path("cart/items/<int:pk>/", CartItemDetail.as_view()),
     path("checkout/", CheckoutView.as_view()),

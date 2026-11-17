@@ -7,7 +7,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import User, Area, Address, Shop, Category, Product, ShopProduct, Cart, CartItem, Order, OrderItem, OrderStatusHistory, Review
-from .serializers import RegisterSerializer, UserSerializer, AreaSerializer, AddressSerializer, ShopSerializer, CategorySerializer, ShopProductSerializer, CartSerializer, OrderSerializer, ReviewSerializer
+from .serializers import RegisterSerializer, UserSerializer, AreaSerializer, AddressSerializer, ShopSerializer, CatalogProductSerializer, CategorySerializer, ShopProductSerializer, CartSerializer, OrderSerializer, ReviewSerializer
 from .permissions import IsShopkeeper, IsDeliveryAgent
 
 class RegisterView(generics.CreateAPIView):
@@ -49,6 +49,22 @@ class ShopDetail(generics.RetrieveAPIView):
     permission_classes = [permissions.AllowAny]
     queryset = Shop.objects.filter(status=Shop.Status.APPROVED)
 
+class CatalogProductList(generics.ListAPIView):
+    serializer_class = CatalogProductSerializer
+    permission_classes = [IsShopkeeper]
+    queryset = Product.objects.filter(is_active=True).select_related("category").order_by("category__name", "name")
+
+class ShopkeeperShops(viewsets.ModelViewSet):
+    serializer_class = ShopSerializer
+    permission_classes = [IsShopkeeper]
+    http_method_names = ["get", "post", "patch", "head", "options"]
+
+    def get_queryset(self):
+        return Shop.objects.filter(owner=self.request.user).select_related("area").order_by("name")
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
 class ProductList(generics.ListAPIView):
     serializer_class = ShopProductSerializer
     permission_classes = [permissions.AllowAny]
@@ -71,6 +87,8 @@ class ShopProductManageViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         shop = get_object_or_404(Shop, id=self.request.data.get("shop"), owner=self.request.user)
         serializer.save(shop=shop)
+    def perform_update(self, serializer):
+        serializer.save(shop=self.get_object().shop)
 
 class CartView(APIView):
     permission_classes = [permissions.IsAuthenticated]

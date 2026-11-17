@@ -38,6 +38,13 @@ class ShopSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "description", "phone", "address", "area", "area_name", "is_open", "status", "delivery_fee", "minimum_order"]
         read_only_fields = ["status"]
 
+class CatalogProductSerializer(serializers.ModelSerializer):
+    category_name = serializers.CharField(source="category.name", read_only=True)
+    class Meta:
+        model = Product
+        fields = ["id", "name", "name_bn", "unit", "category", "category_name", "image_url"]
+        read_only_fields = fields
+
 class CategorySerializer(serializers.ModelSerializer):
     class Meta: model = Category; fields = ["id", "name", "name_bn", "image_url"]
 
