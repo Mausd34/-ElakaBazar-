@@ -86,8 +86,7 @@ class ShopProductManageViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return ShopProduct.objects.filter(shop__owner=self.request.user).select_related("shop", "product", "product__category")
     def perform_create(self, serializer):
-        shop = get_object_or_404(Shop, id=self.request.data.get("shop"), owner=self.request.user)
-        serializer.save(shop=shop)
+        serializer.save(shop=serializer.validated_data["shop"])
 
 class CartView(APIView):
     permission_classes = [permissions.IsAuthenticated]
