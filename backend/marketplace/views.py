@@ -80,6 +80,12 @@ class ShopkeeperShops(generics.ListAPIView):
     def get_queryset(self):
         return Shop.objects.filter(owner=self.request.user).select_related("area").order_by("name")
 
+class ShopApplication(generics.CreateAPIView):
+    serializer_class = ShopSerializer
+    permission_classes = [IsShopkeeper]
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user, status=Shop.Status.PENDING)
+
 class ShopProductManageViewSet(viewsets.ModelViewSet):
     serializer_class = ShopProductSerializer
     permission_classes = [IsShopkeeper]
@@ -234,6 +240,61 @@ class AssignDelivery(APIView):
         agent = get_object_or_404(User, pk=request.data.get("agent"), role=User.Role.DELIVERY_AGENT)
         order.delivery_agent = agent; order.save(update_fields=["delivery_agent", "updated_at"])
         return Response({"detail":"Delivery agent assigned."})
+
+
+class AdminOverview(APIView):
+    permission_classes = [permissions.IsAdminUser]
+    def get(self, request):
+        from django.db.models import Sum
+        return Response({
+            "shops_total": Shop.objects.count(),
+            "shops_pending": Shop.objects.filter(status=Shop.Status.PENDING).count(),
+            "orders_total": Order.objects.count(),
+            "orders_active": Order.objects.exclude(status__in=[Order.Status.DELIVERED, Order.Status.REJECTED, Order.Status.CANCELLED]).count(),
+            "orders_delivered": Order.objects.filter(status=Order.Status.DELIVERED).count(),
+            "customers": User.objects.filter(role=User.Role.CUSTOMER).count(),
+            "shopkeepers": User.objects.filter(role=User.Role.SHOPKEEPER).count(),
+            "delivery_agents": User.objects.filter(role=User.Role.DELIVERY_AGENT).count(),
+            "gross_sales": Order.objects.filter(status=Order.Status.DELIVERED).aggregate(total=Sum("total"))["total"] or Decimal("0.00"),
+        })
+
+class AdminShopList(generics.ListAPIView):
+    serializer_class = ShopSerializer
+    permission_classes = [permissions.IsAdminUser]
+    def get_queryset(self):
+        qs = Shop.objects.select_related("owner", "area").order_by("-created_at")
+        status_filter = self.request.query_params.get("status")
+        if status_filter: qs = qs.filter(status=status_filter.upper())
+        return qs
+
+class AdminShopAction(APIView):
+    permission_classes = [permissions.IsAdminUser]
+    actions = {"approve": Shop.Status.APPROVED, "reject": Shop.Status.REJECTED, "suspend": Shop.Status.SUSPENDED}
+    def post(self, request, pk, action_name):
+        if action_name not in self.actions:
+            return Response({"detail": "Invalid shop action."}, status=400)
+        shop = get_object_or_404(Shop, pk=pk)
+        shop.status = self.actions[action_name]
+        shop.save(update_fields=["status"])
+        return Response(ShopSerializer(shop).data)
+
+class AdminOrders(generics.ListAPIView):
+    serializer_class = OrderSerializer
+    permission_classes = [permissions.IsAdminUser]
+    def get_queryset(self):
+        qs = Order.objects.select_related("shop", "customer", "delivery_agent", "address__area").prefetch_related("items", "history").order_by("-created_at")
+        status_filter = self.request.query_params.get("status")
+        if status_filter: qs = qs.filter(status=status_filter.upper())
+        return qs
+
+class AdminDeliveryAgents(generics.ListAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAdminUser]
+    queryset = User.objects.filter(role=User.Role.DELIVERY_AGENT, is_active=True).order_by("full_name", "username")
+
+class AdminProductCreate(generics.CreateAPIView):
+    serializer_class = ProductCatalogSerializer
+    permission_classes = [permissions.IsAdminUser]
 
 class ReviewCreate(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]

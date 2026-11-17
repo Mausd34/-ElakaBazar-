@@ -38,6 +38,7 @@ Base: `/api/v1/`
 ## Shopkeeper workspace
 
 - `GET /shopkeeper/shops/` — shops owned by the authenticated shopkeeper
+- `POST /shopkeeper/shops/apply/` — submit a new shop for admin approval; ownership is assigned to the authenticated shopkeeper
 - `GET /shopkeeper/orders/` — orders for the shopkeeper's shops
 - `POST /shopkeeper/orders/<uuid>/<accept|reject|preparing|ready>/` — valid order status action
 - `GET /shop-products/manage/` — list inventory for the shopkeeper's own shops
@@ -53,6 +54,6 @@ Shop ownership is checked on inventory writes. A shopkeeper cannot manage anothe
 - `POST /delivery/jobs/<uuid>/<pickup|complete>/` — delivery status action
 - `POST /admin/orders/<uuid>/assign/` — assign a delivery agent (Django staff/admin)
 
-JWT protected endpoints require `Authorization: Bearer <access-token>`.
+Admin endpoints require a Django staff account (`is_staff=True`); the `ADMIN` role string alone does not grant Django staff permissions.\n\nJWT protected endpoints require `Authorization: Bearer <access-token>`.
 
 The API uses page-number pagination for list endpoints. Responses may be wrapped as `{ "count": ..., "next": ..., "previous": ..., "results": [...] }`.
