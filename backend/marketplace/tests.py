@@ -74,6 +74,23 @@ class CoreMarketplaceAPITests(TestCase):
         }, format="json")
         self.assertEqual(response.status_code, 404)
 
+    def test_shopkeeper_can_add_catalogue_product_to_own_shop(self):
+        self.client.force_authenticate(self.seller)
+        another_product = Product.objects.create(category=self.category, name="Cooking Oil")
+        response = self.client.post("/api/v1/shop-products/manage/", {
+            "shop": self.shop.id, "product": another_product.id,
+            "price": "160.00", "stock": "8.000", "is_available": True
+        }, format="json")
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertTrue(ShopProduct.objects.filter(shop=self.shop, product=another_product).exists())
+
+    def test_shopkeeper_cannot_set_negative_stock(self):
+        self.client.force_authenticate(self.seller)
+        response = self.client.patch(f"/api/v1/shop-products/manage/{self.shop_product.id}/", {
+            "stock": "-1.000"
+        }, format="json")
+        self.assertEqual(response.status_code, 400)
+
     def test_shopkeeper_can_update_own_inventory(self):
         self.client.force_authenticate(self.seller)
         response = self.client.patch(f"/api/v1/shop-products/manage/{self.shop_product.id}/", {
