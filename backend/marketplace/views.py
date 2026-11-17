@@ -209,6 +209,23 @@ class OrderDetail(generics.RetrieveAPIView):
     def get_queryset(self):
         return Order.objects.filter(customer=self.request.user).select_related("shop", "address__area").prefetch_related("items", "history")
 
+class OrderCancel(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    @transaction.atomic
+    def post(self, request, pk):
+        order = get_object_or_404(Order.objects.select_for_update(), pk=pk, customer=request.user)
+        if order.status != Order.Status.PLACED or order.payment_method != "COD" or order.payment_status != Order.PaymentStatus.PENDING:
+            return Response({"detail": "Only unpaid COD orders can be cancelled before the shop accepts them."}, status=status.HTTP_400_BAD_REQUEST)
+        for item in order.items.select_related("product"):
+            shop_product = ShopProduct.objects.select_for_update().filter(shop=order.shop, product=item.product).first()
+            if shop_product:
+                shop_product.stock += item.quantity
+                shop_product.save(update_fields=["stock", "updated_at"])
+        order.status = Order.Status.CANCELLED
+        order.save(update_fields=["status", "updated_at"])
+        OrderStatusHistory.objects.create(order=order, status=Order.Status.CANCELLED, changed_by=request.user, note="Cancelled by customer before shop acceptance")
+        return Response(OrderSerializer(order).data)
+
 class ShopkeeperOrders(generics.ListAPIView):
     serializer_class = OrderSerializer
     permission_classes = [IsShopkeeper]
@@ -318,7 +335,7 @@ class AdminProductCreate(generics.CreateAPIView):
     serializer_class = ProductCatalogSerializer
     permission_classes = [permissions.IsAdminUser]
 
-class ReviewCreate(generics.CreateAPIView):
+class ReviewCreate(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = ReviewSerializer
-    def get_queryset(self): return Review.objects.filter(customer=self.request.user)
+    def get_queryset(self): return Review.objects.filter(customer=self.request.user).select_related("order", "shop").order_by("-created_at")

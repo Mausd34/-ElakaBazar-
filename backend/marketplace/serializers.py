@@ -129,9 +129,14 @@ class OrderSerializer(serializers.ModelSerializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     class Meta: model = Review; fields = ["id", "order", "rating", "comment", "created_at"]
-    def create(self, validated):
-        order = validated["order"]
+    def validate_order(self, order):
         user = self.context["request"].user
         if order.customer_id != user.id or order.status != Order.Status.DELIVERED:
             raise serializers.ValidationError("Only the customer of a delivered order can review it.")
+        if Review.objects.filter(order=order).exists():
+            raise serializers.ValidationError("This order has already been reviewed.")
+        return order
+    def create(self, validated):
+        order = validated["order"]
+        user = self.context["request"].user
         return Review.objects.create(customer=user, shop=order.shop, **validated)

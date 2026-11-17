@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from .views import RegisterView, MeView, AreaList, AddressViewSet, CategoryList, ShopList, ShopDetail, ProductList, ProductCatalogList, ShopkeeperShops, ShopApplication, ShopProductManageViewSet, CartView, CartItemDetail, FavoriteViewSet, CheckoutView, OrderList, OrderDetail, ShopkeeperOrders, ShopkeeperOrderAction, DeliveryJobs, DeliveryAction, AssignDelivery, ReviewCreate, AdminOverview, AdminShopList, AdminShopAction, AdminOrders, AdminDeliveryAgents, AdminProductCreate
+from .views import RegisterView, MeView, AreaList, AddressViewSet, CategoryList, ShopList, ShopDetail, ProductList, ProductCatalogList, ShopkeeperShops, ShopApplication, ShopProductManageViewSet, CartView, CartItemDetail, FavoriteViewSet, CheckoutView, OrderList, OrderDetail, OrderCancel, ShopkeeperOrders, ShopkeeperOrderAction, DeliveryJobs, DeliveryAction, AssignDelivery, ReviewCreate, AdminOverview, AdminShopList, AdminShopAction, AdminOrders, AdminDeliveryAgents, AdminProductCreate
 
 router = DefaultRouter()
 router.register("addresses", AddressViewSet, basename="address")
@@ -26,6 +26,7 @@ urlpatterns = [
     path("checkout/", CheckoutView.as_view()),
     path("orders/", OrderList.as_view()),
     path("orders/<uuid:pk>/", OrderDetail.as_view()),
+    path("orders/<uuid:pk>/cancel/", OrderCancel.as_view()),
     path("shopkeeper/orders/", ShopkeeperOrders.as_view()),
     path("shopkeeper/orders/<uuid:pk>/<str:action_name>/", ShopkeeperOrderAction.as_view()),
     path("delivery/jobs/", DeliveryJobs.as_view()),

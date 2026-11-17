@@ -70,6 +70,51 @@ class CoreMarketplaceAPITests(TestCase):
         self.assertEqual(listing.data["results"], [])
         self.assertEqual(forbidden_delete.status_code, 404)
 
+    def test_customer_can_cancel_unaccepted_cod_order_and_restore_stock(self):
+        self.shop_product.stock = Decimal("18")
+        self.shop_product.save(update_fields=["stock"])
+        self.client.force_authenticate(self.customer)
+
+        response = self.client.post(f"/api/v1/orders/{self.order.id}/cancel/")
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.order.refresh_from_db()
+        self.shop_product.refresh_from_db()
+        self.assertEqual(self.order.status, Order.Status.CANCELLED)
+        self.assertEqual(self.shop_product.stock, Decimal("20"))
+        self.assertTrue(self.order.history.filter(status=Order.Status.CANCELLED).exists())
+
+    def test_customer_cannot_cancel_accepted_order(self):
+        self.order.status = Order.Status.ACCEPTED
+        self.order.save(update_fields=["status"])
+        self.shop_product.stock = Decimal("18")
+        self.shop_product.save(update_fields=["stock"])
+        self.client.force_authenticate(self.customer)
+
+        response = self.client.post(f"/api/v1/orders/{self.order.id}/cancel/")
+
+        self.assertEqual(response.status_code, 400, response.data)
+        self.order.refresh_from_db()
+        self.shop_product.refresh_from_db()
+        self.assertEqual(self.order.status, Order.Status.ACCEPTED)
+        self.assertEqual(self.shop_product.stock, Decimal("18"))
+
+    def test_customer_can_review_delivered_order_only_once(self):
+        self.order.status = Order.Status.DELIVERED
+        self.order.save(update_fields=["status"])
+        self.client.force_authenticate(self.customer)
+        payload = {"order": str(self.order.id), "rating": 5, "comment": "Great service"}
+
+        created = self.client.post("/api/v1/reviews/", payload, format="json")
+        duplicate = self.client.post("/api/v1/reviews/", payload, format="json")
+        listing = self.client.get("/api/v1/reviews/")
+
+        self.assertEqual(created.status_code, 201, created.data)
+        self.assertEqual(duplicate.status_code, 400, duplicate.data)
+        reviews = listing.data["results"] if isinstance(listing.data, dict) and "results" in listing.data else listing.data
+        self.assertEqual(len(reviews), 1)
+        self.assertEqual(str(reviews[0]["order"]), str(self.order.id))
+
     def test_shopkeeper_only_sees_own_shops_and_inventory(self):
         self.client.force_authenticate(self.seller)
         shops = self.client.get("/api/v1/shopkeeper/shops/")
