@@ -75,8 +75,10 @@ The repository contains the following implemented backend and web application fo
 | Checkout | COD order creation with stock checks and minimum-order validation |
 | Order workflow | Customer order history and shopkeeper accept/reject/prepare/ready actions |
 | Delivery workflow | Admin assignment and delivery-agent pickup/completion endpoints |
+| Customer orders | Order history, order details, delivery address and status timeline in the web client |
+| Seller inventory | Shopkeeper-owned shop list, catalogue selection, price, stock and availability management |
 | Reviews | Review creation endpoint and rating model |
-| Web client | React + TypeScript storefront with product browsing, search, login and cart screens |
+| Web client | React + TypeScript storefront with product browsing, search, login, registration, account profile, cart and checkout screens |
 | Mobile client | Expo / React Native project scaffold |
 
 **Important:** A repository feature or API endpoint does not automatically mean a complete, production-tested user experience. The mobile app, end-to-end flows, payment integrations, delivery operations and production deployment still require further implementation and verification.
@@ -316,11 +318,15 @@ The backend can use the variables in `backend/.env.example`. For manual SQLite d
 | `/shops/` | GET | List approved shops; supports area/search filters |
 | `/shops/<id>/` | GET | Retrieve a shop |
 | `/products/` | GET | List available shop products; supports filters |
+| `/catalog/products/` | GET | List active catalogue products for seller inventory selection |
+| `/shopkeeper/shops/` | GET | List shops owned by the authenticated shopkeeper |
+| `/shop-products/manage/` | GET, POST | List and add products for the shopkeeper's own shops |
+| `/shop-products/manage/<id>/` | GET, PUT, PATCH, DELETE | Manage an owned shop product; shop ownership is validated |
 | `/cart/` | GET, POST, DELETE | Read, add to and clear the current cart |
 | `/cart/items/<id>/` | PATCH, DELETE | Update or remove a cart item |
 | `/addresses/` | GET, POST, PUT, PATCH, DELETE | Manage the current user's addresses |
 | `/checkout/` | POST | Place a COD order |
-| `/orders/` | GET | List the current customer's orders |
+| `/orders/` | GET | List the current customer's orders, including status history |
 | `/orders/<uuid>/` | GET | Retrieve an order |
 | `/shopkeeper/orders/` | GET | List orders for the current shopkeeper |
 | `/shopkeeper/orders/<uuid>/<action>/` | POST | Shopkeeper order actions |
