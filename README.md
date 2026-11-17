@@ -1,54 +1,116 @@
 # ElakaBazar – Local Grocery Marketplace
 
-## Overview
+ElakaBazar is a Bangladesh-focused local grocery marketplace that connects customers with nearby shops for fresh produce, household essentials, and daily groceries. The platform helps users discover local stores, browse products, place orders, and manage deliveries with a simple and reliable experience.
 
-ElakaBazar is a location‑based grocery marketplace for Bangladesh.  The MVP consists of a **React + TypeScript** frontend (Tailwind CSS, TanStack Query) and a **Django + DRF** backend with PostgreSQL.  Docker‑Compose is used for local development.
+## Project Overview
+
+- Local delivery marketplace for neighborhood groceries
+- Customer-friendly storefront with category browsing and search
+- Shopkeeper dashboard for inventory, pricing, and order management
+- Role-based login for customers and shopkeepers
+- Built for local area-based commerce in Bangladesh
+
+## Screenshots
+
+### Homepage
+
+![ElakaBazar homepage](https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1400&q=80)
+
+### Product browsing
+
+![Product cards](https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?auto=format&fit=crop&w=1200&q=80)
+
+### Store and neighborhood listing
+
+![Store listing](https://images.unsplash.com/photo-1556740749-887f6717d7e4?auto=format&fit=crop&w=1200&q=80)
+
+### Shopkeeper dashboard
+
+![Shopkeeper dashboard](https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&w=1200&q=80)
+
+## Features
+
+- Search products by name, category, or shop
+- Select different delivery areas
+- Add products to cart and checkout with address selection
+- Customer cart and order flow
+- Shopkeeper product management and stock updates
+- Order status updates for accepted, preparing, and ready states
 
 ## Project Structure
 
-```
+```text
 ElakaBazar/
-├─ backend/                # Django project
-│   ├─ elakabazar/         # Core settings & urls
-│   └─ manage.py
-├─ frontend/               # React + Vite app
-│   ├─ src/
-│   ├─ index.html
-│   └─ package.json
-├─ docker-compose.yml      # Multi‑service dev setup
-└─ README.md
+├─ backend/                     # Django + DRF backend
+│  ├─ elakabazar/              # Project settings and URL config
+│  ├─ marketplace/             # Stores, products, cart, auth, orders
+│  ├─ manage.py
+│  └─ requirements.txt
+├─ frontend/                    # React + Vite + TypeScript frontend
+│  ├─ src/
+│  ├─ package.json
+│  ├─ vite.config.ts
+│  └─ index.html
+├─ docker-compose.yml           # Local multi-service setup
+├─ docs/                        # More project documentation
+├─ mobile/                      # Mobile app codebase
+├─ .env.example
+├─ README.md
+└─ .gitignore
 ```
 
 ## Getting Started
 
 ```bash
-# Clone the repo (if you haven't already)
-git clone <repo‑url>
+git clone https://github.com/Mausd34/ElakaBazar.git
 cd ElakaBazar
 
-# Start services via Docker
+# Start the stack with Docker
 docker compose up --build
 ```
 
-The frontend will be available at `http://localhost:5173` and the backend API at `http://localhost:8000/api/`.
+Then open:
 
-## Development
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:8000/api/`
 
-- **Frontend** – `cd frontend && npm run dev`
-- **Backend** – `cd backend && python manage.py runserver 0.0.0.0:8000`
-- **Database** – PostgreSQL runs in Docker; migrations are applied automatically on container start.
+## Development Commands
+
+```bash
+# Frontend
+cd frontend
+npm install
+npm run dev
+
+# Backend
+cd backend
+python manage.py migrate
+python manage.py runserver 0.0.0.0:8000
+```
+
+## Demo Access
+
+Customer demo account:
+
+- Phone: `01700000001`
+- Password: `DemoPass123!`
+
+Shopkeeper demo account:
+
+- Phone: `01700000002`
+- Password: `DemoPass123!`
 
 ## Tech Stack
 
 | Layer | Technology |
-|-------|------------|
-| UI | React, TypeScript, Tailwind CSS |
-| State | TanStack Query |
+|------|------------|
+| Frontend | React, TypeScript, Vite |
+| UI Styling | CSS modules and custom styling |
 | Backend | Python, Django, Django REST Framework |
-| DB | PostgreSQL |
-| Auth | JWT (simple role‑based) |
-| Containerisation | Docker Compose |
+| Database | PostgreSQL |
+| Auth | JWT-based role handling |
+| Containerization | Docker Compose |
 
 ## License
 
-MIT – Feel free to adapt and extend.
+MIT – Feel free to adapt and extend the project.
