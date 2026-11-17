@@ -18,7 +18,13 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ["id", "username", "phone", "full_name", "role", "is_staff"]
-        read_only_fields = ["is_staff"]
+        read_only_fields = ["id", "username", "role", "is_staff"]
+
+    def update(self, instance, validated_data):
+        phone = validated_data.get("phone")
+        if phone and instance.phone and instance.username == instance.phone:
+            validated_data["username"] = phone
+        return super().update(instance, validated_data)
 
 class AreaSerializer(serializers.ModelSerializer):
     class Meta: model = Area; fields = ["id", "name", "district"]

@@ -143,6 +143,26 @@ class AdminAndDeliveryWorkflowTests(TestCase):
         customer_profile = self.client.get("/api/v1/auth/me/")
         self.assertFalse(customer_profile.data["is_staff"])
 
+    def test_customer_can_update_profile_without_changing_role(self):
+        self.customer.username = self.customer.phone
+        self.customer.save(update_fields=["username"])
+        self.client.force_authenticate(self.customer)
+        response = self.client.patch("/api/v1/auth/me/", {
+            "full_name": "Updated Buyer",
+            "phone": "01700000999",
+            "role": User.Role.ADMIN,
+            "is_staff": True,
+            "username": "admin-user",
+        }, format="json")
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.customer.refresh_from_db()
+        self.assertEqual(self.customer.full_name, "Updated Buyer")
+        self.assertEqual(self.customer.phone, "01700000999")
+        self.assertEqual(self.customer.username, "01700000999")
+        self.assertEqual(self.customer.role, User.Role.CUSTOMER)
+        self.assertFalse(self.customer.is_staff)
+
     def test_non_admin_cannot_access_admin_dashboard(self):
         self.client.force_authenticate(self.customer)
         response = self.client.get("/api/v1/admin/overview/")

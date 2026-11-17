@@ -8,6 +8,7 @@ Base: `/api/v1/`
 - `POST /token/refresh/` — refresh JWT
 - `POST /auth/register/` — register a customer (`username`, `phone`, `full_name`, `password`)
 - `GET /auth/me/` — current authenticated user profile (`id`, `username`, `phone`, `full_name`, `role`, and read-only `is_staff`)
+- `PATCH /auth/me/` — update the authenticated user's `full_name` and `phone`; account role and staff status are read-only
 - `GET /areas/` — active delivery areas
 - `GET /addresses/` — list the current user's addresses
 - `POST /addresses/` — create an address for the current user

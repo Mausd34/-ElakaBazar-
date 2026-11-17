@@ -134,3 +134,12 @@ html[data-theme="dark"] .product-skeleton>span{background:linear-gradient(100deg
   .hero-actions{align-items:stretch}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+.profile-edit-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;background:#fff;border:1px solid #e9eee8;border-radius:15px;padding:22px;margin:18px 0}
+.profile-edit-form label{display:grid;gap:7px;font-size:12px;font-weight:700;color:#405548}
+.profile-edit-form input{min-width:0;padding:11px;border:1px solid #dfe7df;border-radius:8px;background:#fff;color:#263b2d}
+.profile-edit-form button{grid-column:1/-1;width:max-content;margin:0}
+html[data-theme="dark"] .profile-edit-form{background:#18231b;border-color:#2b3b30}
+html[data-theme="dark"] .profile-edit-form label{color:#e5eee7}
+html[data-theme="dark"] .profile-edit-form input{background:#101812;border-color:#34483a;color:#e5eee7}
+@media(max-width:560px){.profile-edit-form{grid-template-columns:1fr;padding:16px}.profile-edit-form button{grid-column:auto}}
