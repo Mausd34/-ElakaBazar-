@@ -20,6 +20,22 @@ ElakaBazar is a web-first marketplace designed to connect customers with nearby 
 
 ---
 
+## Screenshots
+
+### Homepage
+
+![ElakaBazar homepage](./docs/screenshots/homepage.png)
+
+### Store listing
+
+![ElakaBazar store listing](./docs/screenshots/stores.png)
+
+### Shopkeeper dashboard
+
+![ElakaBazar shopkeeper dashboard](./docs/screenshots/shopkeeper.png)
+
+---
+
 ## Table of contents
 
 - [Why ElakaBazar?](#why-elakabazar)
