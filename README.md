@@ -18,6 +18,41 @@ ElakaBazar is a web-first marketplace designed to connect customers with nearby 
   <a href="docs/DEPLOYMENT.md">Deployment checklist</a>
 </p>
 
+## Project at a glance
+
+- Customer-facing storefront for local grocery discovery and checkout
+- Area-based product browsing with neighborhood shop filtering
+- Shopkeeper dashboard for inventory, stock and order actions
+- Delivery and admin workspaces for fulfillment and operations
+- Built as a practical MVP for Bangladesh's local commerce workflows
+
+### How it works
+
+```mermaid
+flowchart LR
+    A[Customer] --> B[Web App]
+    B --> C[API Layer]
+    C --> D[Shop & Product Catalog]
+    C --> E[Cart & Checkout]
+    C --> F[Order Workflow]
+    F --> G[Shopkeeper Dashboard]
+    F --> H[Delivery Agent Workspace]
+    F --> I[Admin Dashboard]
+    D --> J[(Database)]
+    E --> J
+    G --> J
+    H --> J
+    I --> J
+```
+
+### Quick start in Bangla
+
+1. লোকাল ডেভ কনফিগারেশন সেট আপ করুন
+2. Django backend চালু করুন
+3. React frontend রান করে ডেলিভারি ও অর্ডার ফ্লো টেস্ট করুন
+
+This project is designed for rapid validation of a local grocery marketplace before scaling to a production-ready commerce platform.
+
 ---
 
 ## Screenshots
