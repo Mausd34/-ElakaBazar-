@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from .views import RegisterView, MeView, AreaList, AddressViewSet, CategoryList, ShopList, ShopDetail, ProductList, ProductCatalogList, ShopkeeperShops, ShopProductManageViewSet, CartView, CartItemDetail, CheckoutView, OrderList, OrderDetail, ShopkeeperOrders, ShopkeeperOrderAction, DeliveryJobs, DeliveryAction, AssignDelivery, ReviewCreate, AdminOverview, AdminShopList, AdminShopAction, AdminOrders, AdminDeliveryAgents, AdminProductCreate
+from .views import RegisterView, MeView, AreaList, AddressViewSet, CategoryList, ShopList, ShopDetail, ProductList, ProductCatalogList, ShopkeeperShops, ShopApplication, ShopProductManageViewSet, CartView, CartItemDetail, CheckoutView, OrderList, OrderDetail, ShopkeeperOrders, ShopkeeperOrderAction, DeliveryJobs, DeliveryAction, AssignDelivery, ReviewCreate, AdminOverview, AdminShopList, AdminShopAction, AdminOrders, AdminDeliveryAgents, AdminProductCreate
 
 router = DefaultRouter()
 router.register("addresses", AddressViewSet, basename="address")
@@ -19,6 +19,7 @@ urlpatterns = [
     path("products/", ProductList.as_view()),
     path("catalog/products/", ProductCatalogList.as_view()),
     path("shopkeeper/shops/", ShopkeeperShops.as_view()),
+    path("shopkeeper/shops/apply/", ShopApplication.as_view()),
     path("cart/", CartView.as_view()),
     path("cart/items/<int:pk>/", CartItemDetail.as_view()),
     path("checkout/", CheckoutView.as_view()),
