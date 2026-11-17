@@ -100,7 +100,7 @@ class OrderSerializer(serializers.ModelSerializer):
     history = OrderStatusHistorySerializer(many=True, read_only=True)
     shop_name = serializers.CharField(source="shop.name", read_only=True)
     customer_name = serializers.CharField(source="customer.full_name", read_only=True)
-    customer_phone = serializers.CharField(source="customer.phone", read_only=True)
+    customer_phone = serializers.CharField(source="customer.phone", read_only=True, allow_null=True)
     address_line = serializers.CharField(source="address.address_line", read_only=True)
     area_name = serializers.CharField(source="address.area.name", read_only=True)
     delivery_agent_name = serializers.CharField(source="delivery_agent.full_name", read_only=True, allow_null=True)
