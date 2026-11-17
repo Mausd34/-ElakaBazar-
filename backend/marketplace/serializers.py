@@ -59,6 +59,11 @@ class ShopProductSerializer(serializers.ModelSerializer):
         fields = ["id", "shop", "shop_name", "product", "product_name", "product_name_bn", "unit", "image_url", "category_name", "price", "stock", "is_available", "updated_at"]
         read_only_fields = ["id", "shop"]
 
+    def validate_stock(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Stock cannot be negative.")
+        return value
+
 class CartItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source="shop_product.product.name", read_only=True)
     product_name_bn = serializers.CharField(source="shop_product.product.name_bn", read_only=True)
