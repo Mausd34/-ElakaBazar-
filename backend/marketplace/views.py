@@ -1,13 +1,12 @@
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions, status, viewsets
-from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import User, Area, Address, Shop, Category, Product, ShopProduct, Cart, CartItem, Order, OrderItem, OrderStatusHistory, Review
-from .serializers import RegisterSerializer, UserSerializer, AreaSerializer, AddressSerializer, ShopSerializer, CategorySerializer, ShopProductSerializer, CartSerializer, OrderSerializer, ReviewSerializer
+from .serializers import RegisterSerializer, UserSerializer, AreaSerializer, AddressSerializer, ShopSerializer, CategorySerializer, ProductCatalogSerializer, ShopProductSerializer, CartSerializer, OrderSerializer, ReviewSerializer
 from .permissions import IsShopkeeper, IsDeliveryAgent
 
 class RegisterView(generics.CreateAPIView):
@@ -64,13 +63,30 @@ class ProductList(generics.ListAPIView):
         if search: qs = qs.filter(Q(product__name__icontains=search) | Q(product__name_bn__icontains=search))
         return qs.order_by("product__name")
 
+class ProductCatalogList(generics.ListAPIView):
+    serializer_class = ProductCatalogSerializer
+    permission_classes = [permissions.AllowAny]
+    def get_queryset(self):
+        qs = Product.objects.filter(is_active=True).select_related("category")
+        category = self.request.query_params.get("category")
+        search = self.request.query_params.get("search")
+        if category: qs = qs.filter(category_id=category)
+        if search: qs = qs.filter(Q(name__icontains=search) | Q(name_bn__icontains=search))
+        return qs.order_by("name")
+
+class ShopkeeperShops(generics.ListAPIView):
+    serializer_class = ShopSerializer
+    permission_classes = [IsShopkeeper]
+    def get_queryset(self):
+        return Shop.objects.filter(owner=self.request.user).select_related("area").order_by("name")
+
 class ShopProductManageViewSet(viewsets.ModelViewSet):
     serializer_class = ShopProductSerializer
     permission_classes = [IsShopkeeper]
-    def get_queryset(self): return ShopProduct.objects.filter(shop__owner=self.request.user).select_related("shop", "product")
+    def get_queryset(self):
+        return ShopProduct.objects.filter(shop__owner=self.request.user).select_related("shop", "product", "product__category").order_by("product__name", "id")
     def perform_create(self, serializer):
-        shop = get_object_or_404(Shop, id=self.request.data.get("shop"), owner=self.request.user)
-        serializer.save(shop=shop)
+        serializer.save(shop=serializer.validated_data["shop"])
 
 class CartView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -79,9 +95,12 @@ class CartView(APIView):
         return Response(CartSerializer(cart).data)
     def post(self, request):
         shop_product_id = request.data.get("shop_product")
-        quantity = Decimal(str(request.data.get("quantity", "1")))
-        if quantity <= 0: return Response({"detail":"Quantity must be positive."}, status=400)
-        sp = get_object_or_404(ShopProduct.objects.select_related("shop"), id=shop_product_id, is_available=True, shop__status=Shop.Status.APPROVED)
+        try:
+            quantity = Decimal(str(request.data.get("quantity", "1")))
+        except (InvalidOperation, TypeError, ValueError):
+            return Response({"detail": "Enter a valid quantity."}, status=400)
+        if not quantity.is_finite() or quantity <= 0: return Response({"detail":"Quantity must be positive."}, status=400)
+        sp = get_object_or_404(ShopProduct.objects.select_related("shop"), id=shop_product_id, is_available=True, shop__status=Shop.Status.APPROVED, shop__is_open=True)
         if sp.stock < quantity: return Response({"detail":"Insufficient stock."}, status=400)
         cart, _ = Cart.objects.get_or_create(customer=request.user)
         if cart.shop_id and cart.shop_id != sp.shop_id:
@@ -89,7 +108,11 @@ class CartView(APIView):
         cart.shop = sp.shop
         cart.save()
         item, created = CartItem.objects.get_or_create(cart=cart, shop_product=sp, defaults={"quantity":quantity})
-        if not created: item.quantity += quantity; item.save()
+        if not created:
+            new_quantity = item.quantity + quantity
+            if new_quantity > sp.stock: return Response({"detail":"Insufficient stock for the requested quantity."}, status=400)
+            item.quantity = new_quantity
+            item.save()
         return Response(CartSerializer(cart).data, status=201)
     def delete(self, request):
         cart, _ = Cart.objects.get_or_create(customer=request.user)
@@ -100,7 +123,11 @@ class CartItemDetail(APIView):
     permission_classes = [permissions.IsAuthenticated]
     def patch(self, request, pk):
         item = get_object_or_404(CartItem, pk=pk, cart__customer=request.user)
-        quantity = Decimal(str(request.data.get("quantity", item.quantity)))
+        try:
+            quantity = Decimal(str(request.data.get("quantity", item.quantity)))
+        except (InvalidOperation, TypeError, ValueError):
+            return Response({"detail": "Enter a valid quantity."}, status=400)
+        if not quantity.is_finite(): return Response({"detail": "Enter a finite quantity."}, status=400)
         if quantity <= 0: item.delete()
         elif quantity > item.shop_product.stock: return Response({"detail":"Insufficient stock."}, status=400)
         else: item.quantity = quantity; item.save()
@@ -145,17 +172,19 @@ class CheckoutView(APIView):
 class OrderList(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = OrderSerializer
-    def get_queryset(self): return Order.objects.filter(customer=self.request.user).prefetch_related("items").order_by("-created_at")
+    def get_queryset(self):
+        return Order.objects.filter(customer=self.request.user).select_related("shop", "address__area").prefetch_related("items", "history").order_by("-created_at")
 
 class OrderDetail(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = OrderSerializer
-    def get_queryset(self): return Order.objects.filter(customer=self.request.user).prefetch_related("items")
+    def get_queryset(self):
+        return Order.objects.filter(customer=self.request.user).select_related("shop", "address__area").prefetch_related("items", "history")
 
 class ShopkeeperOrders(generics.ListAPIView):
     serializer_class = OrderSerializer
     permission_classes = [IsShopkeeper]
-    def get_queryset(self): return Order.objects.filter(shop__owner=self.request.user).prefetch_related("items").order_by("-created_at")
+    def get_queryset(self): return Order.objects.filter(shop__owner=self.request.user).select_related("shop", "address__area").prefetch_related("items", "history").order_by("-created_at")
 
 class ShopkeeperOrderAction(APIView):
     permission_classes = [IsShopkeeper]

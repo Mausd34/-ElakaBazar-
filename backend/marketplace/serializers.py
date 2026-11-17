@@ -1,6 +1,6 @@
 from decimal import Decimal
 from rest_framework import serializers
-from .models import User, Area, Address, Shop, Category, Product, ShopProduct, Cart, CartItem, Order, OrderItem, Review
+from .models import User, Area, Address, Shop, Category, Product, ShopProduct, Cart, CartItem, Order, OrderItem, OrderStatusHistory, Review
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
@@ -41,7 +41,14 @@ class ShopSerializer(serializers.ModelSerializer):
 class CategorySerializer(serializers.ModelSerializer):
     class Meta: model = Category; fields = ["id", "name", "name_bn", "image_url"]
 
+class ProductCatalogSerializer(serializers.ModelSerializer):
+    category_name = serializers.CharField(source="category.name", read_only=True)
+    class Meta:
+        model = Product
+        fields = ["id", "name", "name_bn", "unit", "category", "category_name", "image_url"]
+
 class ShopProductSerializer(serializers.ModelSerializer):
+    shop = serializers.PrimaryKeyRelatedField(queryset=Shop.objects.all())
     product_name = serializers.CharField(source="product.name", read_only=True)
     product_name_bn = serializers.CharField(source="product.name_bn", read_only=True)
     unit = serializers.CharField(source="product.unit", read_only=True)
@@ -51,6 +58,18 @@ class ShopProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShopProduct
         fields = ["id", "shop", "shop_name", "product", "product_name", "product_name_bn", "unit", "image_url", "category_name", "price", "stock", "is_available", "updated_at"]
+        read_only_fields = ["id"]
+
+    def validate_shop(self, value):
+        request = self.context.get("request")
+        if request and value.owner_id != request.user.id:
+            raise serializers.ValidationError("You can only manage inventory for your own shop.")
+        return value
+
+    def validate_stock(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Stock cannot be negative.")
+        return value
 
 class CartItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source="shop_product.product.name", read_only=True)
@@ -70,12 +89,21 @@ class CartSerializer(serializers.ModelSerializer):
 class OrderItemSerializer(serializers.ModelSerializer):
     class Meta: model = OrderItem; fields = ["product_name", "unit", "quantity", "unit_price", "line_total"]
 
+class OrderStatusHistorySerializer(serializers.ModelSerializer):
+    changed_by_name = serializers.CharField(source="changed_by.full_name", read_only=True)
+    class Meta:
+        model = OrderStatusHistory
+        fields = ["status", "changed_by_name", "note", "created_at"]
+
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
+    history = OrderStatusHistorySerializer(many=True, read_only=True)
     shop_name = serializers.CharField(source="shop.name", read_only=True)
+    address_line = serializers.CharField(source="address.address_line", read_only=True)
+    area_name = serializers.CharField(source="address.area.name", read_only=True)
     class Meta:
         model = Order
-        fields = ["id", "order_number", "shop_name", "subtotal", "delivery_fee", "total", "payment_method", "payment_status", "status", "created_at", "items"]
+        fields = ["id", "order_number", "shop_name", "address_line", "area_name", "subtotal", "delivery_fee", "total", "payment_method", "payment_status", "status", "created_at", "items", "history"]
 
 class ReviewSerializer(serializers.ModelSerializer):
     class Meta: model = Review; fields = ["id", "order", "rating", "comment", "created_at"]
