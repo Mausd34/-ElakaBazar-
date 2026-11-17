@@ -84,7 +84,7 @@ class ShopProductManageViewSet(viewsets.ModelViewSet):
     serializer_class = ShopProductSerializer
     permission_classes = [IsShopkeeper]
     def get_queryset(self):
-        return ShopProduct.objects.filter(shop__owner=self.request.user).select_related("shop", "product", "product__category")
+        return ShopProduct.objects.filter(shop__owner=self.request.user).select_related("shop", "product", "product__category").order_by("product__name", "id")
     def perform_create(self, serializer):
         serializer.save(shop=serializer.validated_data["shop"])
 
