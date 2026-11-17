@@ -14,19 +14,15 @@ ElakaBazar is a Bangladesh-focused local grocery marketplace that connects custo
 
 ### Homepage
 
-![ElakaBazar homepage](https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1400&q=80)
+![ElakaBazar homepage](./docs/screenshots/homepage.png)
 
-### Product browsing
+### Store listing
 
-![Product cards](https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?auto=format&fit=crop&w=1200&q=80)
-
-### Store and neighborhood listing
-
-![Store listing](https://images.unsplash.com/photo-1556740749-887f6717d7e4?auto=format&fit=crop&w=1200&q=80)
+![ElakaBazar store listing](./docs/screenshots/stores.png)
 
 ### Shopkeeper dashboard
 
-![Shopkeeper dashboard](https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&w=1200&q=80)
+![ElakaBazar shopkeeper dashboard](./docs/screenshots/shopkeeper.png)
 
 ## Features
 
