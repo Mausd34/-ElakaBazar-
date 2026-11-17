@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from .views import RegisterView, MeView, AreaList, AddressViewSet, CategoryList, ShopList, ShopDetail, ProductList, ProductCatalogList, ShopkeeperShops, ShopProductManageViewSet, CartView, CartItemDetail, CheckoutView, OrderList, OrderDetail, ShopkeeperOrders, ShopkeeperOrderAction, DeliveryJobs, DeliveryAction, AssignDelivery, ReviewCreate
+from .views import RegisterView, MeView, AreaList, AddressViewSet, CategoryList, ShopList, ShopDetail, ProductList, ProductCatalogList, ShopkeeperShops, ShopProductManageViewSet, CartView, CartItemDetail, CheckoutView, OrderList, OrderDetail, ShopkeeperOrders, ShopkeeperOrderAction, DeliveryJobs, DeliveryAction, AssignDelivery, ReviewCreate, AdminOverview, AdminShopList, AdminShopAction, AdminOrders, AdminDeliveryAgents, AdminProductCreate
 
 router = DefaultRouter()
 router.register("addresses", AddressViewSet, basename="address")
@@ -28,6 +28,12 @@ urlpatterns = [
     path("shopkeeper/orders/<uuid:pk>/<str:action_name>/", ShopkeeperOrderAction.as_view()),
     path("delivery/jobs/", DeliveryJobs.as_view()),
     path("delivery/jobs/<uuid:pk>/<str:action_name>/", DeliveryAction.as_view()),
+    path("admin/overview/", AdminOverview.as_view()),
+    path("admin/shops/", AdminShopList.as_view()),
+    path("admin/shops/<int:pk>/<str:action_name>/", AdminShopAction.as_view()),
+    path("admin/orders/", AdminOrders.as_view()),
+    path("admin/delivery-agents/", AdminDeliveryAgents.as_view()),
+    path("admin/products/", AdminProductCreate.as_view()),
     path("admin/orders/<uuid:pk>/assign/", AssignDelivery.as_view()),
     path("reviews/", ReviewCreate.as_view()),
 ] + router.urls
