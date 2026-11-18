@@ -1,6 +1,6 @@
 from decimal import Decimal
 from rest_framework import serializers
-from .models import User, Area, Address, Shop, Category, Product, ShopProduct, Cart, CartItem, Order, OrderItem, Review
+from .models import User, Area, Address, Shop, Category, Product, ShopProduct, Cart, CartItem, Order, OrderItem, OrderStatusHistory, Shipment, Review
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
@@ -83,6 +83,40 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ["id", "order_number", "shop_name", "subtotal", "delivery_fee", "total", "payment_method", "payment_status", "status", "created_at", "items"]
+
+class OrderHistorySerializer(serializers.ModelSerializer):
+    status_label = serializers.CharField(source="get_status_display", read_only=True)
+    updated_by_name = serializers.CharField(source="changed_by.full_name", read_only=True)
+    description = serializers.CharField(source="note", read_only=True)
+    class Meta:
+        model = OrderStatusHistory
+        fields = ["id", "previous_status", "status", "status_label", "description", "location", "updated_by_name", "created_at"]
+
+class ShipmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Shipment
+        fields = ["courier_name", "tracking_number", "shipment_status", "shipped_at", "delivered_at", "external_reference"]
+        read_only_fields = ["shipped_at", "delivered_at", "external_reference"]
+
+class OrderTrackingSerializer(serializers.ModelSerializer):
+    items = OrderItemSerializer(many=True, read_only=True)
+    history = OrderHistorySerializer(many=True, read_only=True)
+    shipment = ShipmentSerializer(read_only=True)
+    shop_name = serializers.CharField(source="shop.name", read_only=True)
+    delivery_address = serializers.SerializerMethodField()
+    class Meta:
+        model = Order
+        fields = ["id", "order_number", "tracking_number", "shop_name", "subtotal", "delivery_fee", "total",
+                  "payment_method", "payment_status", "status", "courier_name", "estimated_delivery",
+                  "created_at", "updated_at", "delivery_address", "items", "shipment", "history"]
+    def get_delivery_address(self, obj):
+        request = self.context.get("request")
+        return {
+            "address_line": obj.address.address_line,
+            "landmark": obj.address.landmark,
+            "area": obj.address.area.name,
+            "phone": obj.address.phone,
+        } if request and request.user.is_authenticated and request.user.id == obj.customer_id else None
 
 class ReviewSerializer(serializers.ModelSerializer):
     class Meta: model = Review; fields = ["id", "order", "rating", "comment", "created_at"]

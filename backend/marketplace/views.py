@@ -1,13 +1,15 @@
 from decimal import Decimal
+import secrets
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
-from rest_framework import generics, permissions, status, viewsets
+from django.utils import timezone
+from rest_framework import generics, permissions, status, viewsets, throttling
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import User, Area, Address, Shop, Category, Product, ShopProduct, Cart, CartItem, Order, OrderItem, OrderStatusHistory, Review
-from .serializers import RegisterSerializer, UserSerializer, AreaSerializer, AddressSerializer, ShopSerializer, CatalogProductSerializer, CategorySerializer, ShopProductSerializer, CartSerializer, OrderSerializer, ReviewSerializer
+from .models import User, Area, Address, Shop, Category, Product, ShopProduct, Cart, CartItem, Order, OrderItem, OrderStatusHistory, Shipment, Review
+from .serializers import RegisterSerializer, UserSerializer, AreaSerializer, AddressSerializer, ShopSerializer, CatalogProductSerializer, CategorySerializer, ShopProductSerializer, CartSerializer, OrderSerializer, OrderTrackingSerializer, ShipmentSerializer, ReviewSerializer
 from .permissions import IsShopkeeper, IsDeliveryAgent
 
 class RegisterView(generics.CreateAPIView):
@@ -151,7 +153,16 @@ class CheckoutView(APIView):
         if subtotal < shop.minimum_order:
             return Response({"detail":f"Minimum order is ৳{shop.minimum_order}."}, status=400)
         delivery_fee = shop.delivery_fee
-        order = Order.objects.create(customer=request.user, shop=shop, address=address, subtotal=subtotal, delivery_fee=delivery_fee, total=subtotal+delivery_fee, payment_method="COD")
+        order = Order.objects.create(
+            customer=request.user,
+            shop=shop,
+            address=address,
+            subtotal=subtotal,
+            delivery_fee=delivery_fee,
+            total=subtotal+delivery_fee,
+            payment_method="COD",
+            tracking_number="ELK-" + secrets.token_hex(8).upper(),
+        )
         for item, sp in locked:
             OrderItem.objects.create(order=order, product=sp.product, product_name=sp.product.name, unit=sp.product.unit, quantity=item.quantity, unit_price=sp.price, line_total=sp.price*item.quantity)
             sp.stock -= item.quantity
@@ -170,6 +181,96 @@ class OrderDetail(generics.RetrieveAPIView):
     serializer_class = OrderSerializer
     def get_queryset(self): return Order.objects.filter(customer=self.request.user).prefetch_related("items")
 
+ALLOWED_ORDER_TRANSITIONS = {
+    Order.Status.PLACED: {Order.Status.ACCEPTED, Order.Status.REJECTED, Order.Status.CANCELLED},
+    Order.Status.ACCEPTED: {Order.Status.PREPARING, Order.Status.CANCELLED},
+    Order.Status.PREPARING: {Order.Status.READY, Order.Status.CANCELLED},
+    Order.Status.READY: {Order.Status.PICKED_UP, Order.Status.CANCELLED},
+    Order.Status.PICKED_UP: {Order.Status.OUT_FOR_DELIVERY, Order.Status.DELIVERED},
+    Order.Status.OUT_FOR_DELIVERY: {Order.Status.DELIVERED},
+}
+
+def transition_order(order, target, changed_by, note='', location=''):
+    if target not in ALLOWED_ORDER_TRANSITIONS.get(order.status, set()):
+        raise ValueError('Invalid order status transition.')
+    previous = order.status
+    order.status = target
+    if target == Order.Status.DELIVERED and order.payment_method == 'COD':
+        order.payment_status = Order.PaymentStatus.PAID
+    order.save(update_fields=['status', 'payment_status', 'updated_at'])
+    OrderStatusHistory.objects.create(order=order, previous_status=previous, status=target, changed_by=changed_by, note=note, location=location)
+    return order
+
+class CustomerOrderTracking(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    def get(self, request, pk):
+        order = get_object_or_404(Order.objects.select_related('address', 'address__area', 'shop', 'customer', 'shipment').prefetch_related('items', 'history__changed_by'), id=pk, customer=request.user)
+        return Response(OrderTrackingSerializer(order, context={'request': request}).data)
+
+class PublicTracking(APIView):
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [throttling.ScopedRateThrottle]
+    throttle_scope = 'public_tracking'
+    def get(self, request, tracking_number):
+        tracking_number = tracking_number.strip().upper()
+        if not 8 <= len(tracking_number) <= 64:
+            return Response({'detail':'Invalid tracking number.'}, status=400)
+        order = get_object_or_404(Order.objects.select_related('address', 'address__area', 'shop', 'shipment').prefetch_related('items', 'history'), tracking_number=tracking_number)
+        return Response(OrderTrackingSerializer(order, context={'request': request}).data)
+
+class AdminOrderList(generics.ListAPIView):
+    permission_classes = [permissions.IsAdminUser]
+    serializer_class = OrderTrackingSerializer
+    def get_queryset(self):
+        qs = Order.objects.select_related('customer', 'shop', 'address', 'address__area', 'shipment').prefetch_related('items', 'history').order_by('-created_at')
+        search = self.request.query_params.get('search')
+        order_status = self.request.query_params.get('status')
+        date = self.request.query_params.get('date')
+        if search:
+            qs = qs.filter(Q(order_number__icontains=search) | Q(tracking_number__icontains=search) | Q(customer__full_name__icontains=search) | Q(customer__username__icontains=search))
+        if order_status:
+            qs = qs.filter(status=order_status)
+        if date:
+            qs = qs.filter(created_at__date=date)
+        return qs
+
+class AdminOrderDetail(generics.RetrieveAPIView):
+    permission_classes = [permissions.IsAdminUser]
+    serializer_class = OrderTrackingSerializer
+    queryset = Order.objects.select_related('customer', 'shop', 'address', 'address__area', 'shipment').prefetch_related('items', 'history')
+
+class AdminOrderStatus(APIView):
+    permission_classes = [permissions.IsAdminUser]
+    @transaction.atomic
+    def patch(self, request, pk):
+        order = get_object_or_404(Order.objects.select_for_update(), id=pk)
+        target = request.data.get('status')
+        if target not in dict(Order.Status.choices):
+            return Response({'detail':'Invalid order status.'}, status=400)
+        try:
+            transition_order(order, target, request.user, str(request.data.get('note', ''))[:255], str(request.data.get('location', ''))[:255])
+        except ValueError as exc:
+            return Response({'detail':str(exc)}, status=400)
+        return Response(OrderTrackingSerializer(order, context={'request': request}).data)
+
+class AdminOrderShipment(APIView):
+    permission_classes = [permissions.IsAdminUser]
+    @transaction.atomic
+    def post(self, request, pk):
+        order = get_object_or_404(Order.objects.select_for_update(), id=pk)
+        courier_name = str(request.data.get('courier_name', '')).strip()
+        tracking_number = str(request.data.get('tracking_number', '')).strip().upper()
+        if not courier_name or not tracking_number:
+            return Response({'detail':'Courier name and tracking number are required.'}, status=400)
+        if Shipment.objects.filter(tracking_number=tracking_number).exclude(order=order).exists():
+            return Response({'detail':'Tracking number is already used.'}, status=400)
+        shipment, _ = Shipment.objects.update_or_create(order=order, defaults={'courier_name':courier_name, 'tracking_number':tracking_number, 'shipment_status':Shipment.Status.PENDING})
+        order.courier_name = courier_name
+        order.tracking_number = tracking_number
+        order.estimated_delivery = request.data.get('estimated_delivery') or order.estimated_delivery
+        order.save(update_fields=['courier_name', 'tracking_number', 'estimated_delivery', 'updated_at'])
+        return Response(ShipmentSerializer(shipment).data)
+
 class ShopkeeperOrders(generics.ListAPIView):
     serializer_class = OrderSerializer
     permission_classes = [IsShopkeeper]
@@ -183,18 +284,63 @@ class ShopkeeperOrderAction(APIView):
         if action_name not in self.allowed: return Response({"detail":"Invalid action."}, status=400)
         order = get_object_or_404(Order.objects.select_for_update(), id=pk, shop__owner=request.user)
         target = self.allowed[action_name]
+        previous_status = order.status
         valid = {
             "accept": [Order.Status.PLACED], "reject": [Order.Status.PLACED],
             "preparing": [Order.Status.ACCEPTED], "ready": [Order.Status.PREPARING],
         }
         if order.status not in valid[action_name]: return Response({"detail":"Invalid order status transition."}, status=400)
         order.status = target; order.save(update_fields=["status", "updated_at"])
-        OrderStatusHistory.objects.create(order=order, status=target, changed_by=request.user)
+        OrderStatusHistory.objects.create(order=order, previous_status=previous_status, status=target, changed_by=request.user)
         if target == Order.Status.REJECTED:
             for item in order.items.select_related("product"):
                 sp = ShopProduct.objects.select_for_update().filter(shop=order.shop, product=item.product).first()
                 if sp: sp.stock += item.quantity; sp.save(update_fields=["stock", "updated_at"])
         return Response(OrderSerializer(order).data)
+
+class SellerOrderStatus(APIView):
+    permission_classes = [IsShopkeeper]
+    @transaction.atomic
+    def patch(self, request, pk):
+        order = get_object_or_404(Order.objects.select_for_update(), id=pk, shop__owner=request.user)
+        target = request.data.get('status')
+        allowed = {
+            Order.Status.PLACED: {Order.Status.ACCEPTED, Order.Status.REJECTED, Order.Status.CANCELLED},
+            Order.Status.ACCEPTED: {Order.Status.PREPARING, Order.Status.CANCELLED},
+            Order.Status.PREPARING: {Order.Status.READY, Order.Status.CANCELLED},
+        }
+        if target not in allowed.get(order.status, set()):
+            return Response({'detail':'Invalid seller order status transition.'}, status=400)
+        try:
+            transition_order(order, target, request.user, str(request.data.get('note', ''))[:255])
+        except ValueError as exc:
+            return Response({'detail':str(exc)}, status=400)
+        if target == Order.Status.REJECTED:
+            for item in order.items.select_related('product'):
+                sp = ShopProduct.objects.select_for_update().filter(shop=order.shop, product=item.product).first()
+                if sp:
+                    sp.stock += item.quantity
+                    sp.save(update_fields=['stock', 'updated_at'])
+        return Response(OrderTrackingSerializer(order, context={'request': request}).data)
+
+class SellerOrderShipment(APIView):
+    permission_classes = [IsShopkeeper]
+    @transaction.atomic
+    def post(self, request, pk):
+        order = get_object_or_404(Order.objects.select_for_update(), id=pk, shop__owner=request.user)
+        if order.status not in {Order.Status.PREPARING, Order.Status.READY}:
+            return Response({'detail':'Shipment can only be created after preparation.'}, status=400)
+        courier_name = str(request.data.get('courier_name', '')).strip()
+        tracking_number = str(request.data.get('tracking_number', '')).strip().upper()
+        if not courier_name or not tracking_number:
+            return Response({'detail':'Courier name and tracking number are required.'}, status=400)
+        if Shipment.objects.filter(tracking_number=tracking_number).exclude(order=order).exists():
+            return Response({'detail':'Tracking number is already used.'}, status=400)
+        shipment, _ = Shipment.objects.update_or_create(order=order, defaults={'courier_name':courier_name, 'tracking_number':tracking_number, 'shipment_status':Shipment.Status.PENDING})
+        order.courier_name = courier_name
+        order.tracking_number = tracking_number
+        order.save(update_fields=['courier_name', 'tracking_number', 'updated_at'])
+        return Response(ShipmentSerializer(shipment).data)
 
 class DeliveryJobs(generics.ListAPIView):
     serializer_class = OrderSerializer

@@ -65,3 +65,78 @@
 .managed-order-footer .actions .reject-order{background:white;color:#a53e39;border-color:#edd3d0}
 @media(max-width:900px){.shopkeeper-page{margin:28px 20px 50px}.inventory-row{grid-template-columns:minmax(180px,2fr) repeat(2,minmax(80px,.7fr)) auto}.availability-toggle{grid-column:2/4}.inventory-actions{grid-column:4;grid-row:2}.add-product-form{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.shopkeeper-heading{align-items:flex-start}.shopkeeper-heading h1{font-size:24px}.dashboard-stats{gap:8px}.dashboard-stats div{padding:14px 10px}.dashboard-stats b{font-size:20px}.dashboard-stats span{font-size:10px}.dashboard-panel{padding:16px}.dashboard-form,.add-product-form{grid-template-columns:1fr}.dashboard-form .form-wide{grid-column:auto}.shop-select-row{align-items:stretch;flex-direction:column}.shop-select-row select{min-width:0;width:100%}.inventory-row{grid-template-columns:1fr 1fr;gap:10px}.inventory-product{grid-column:1/-1}.availability-toggle{grid-column:auto}.inventory-actions{grid-column:1/-1;grid-row:auto}.managed-order-footer{align-items:flex-start;flex-direction:column}}
+
+.team-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;max-width:520px;margin:0 auto}
+.team-member{margin:0;text-align:center}
+.team-grid img{display:block;width:100%;aspect-ratio:3/4;object-fit:cover;object-position:center 25%;border-radius:16px;background:#edf3ec;box-shadow:0 12px 28px rgba(17,53,36,.1)}
+.team-member figcaption{margin-top:12px;color:#20392a;font-size:15px;font-weight:700}
+@media(max-width:620px){.team-grid{gap:12px}}
+
+.tracking-page{max-width:1160px}
+.tracking-heading{text-align:center;margin-bottom:22px}
+.tracking-heading h1{margin:8px 0}
+.tracking-search{max-width:720px;margin:0 auto 24px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end;background:white;border:1px solid #e8eee7;border-radius:14px;padding:14px}
+.tracking-search label{display:grid;gap:7px;font-size:12px;font-weight:700}
+.tracking-search input{width:100%;padding:12px;border:1px solid #dfe7df;border-radius:9px;outline-color:#16834a}
+.tracking-search .primary-btn{height:43px;border:0;cursor:pointer}
+.tracked-orders{max-width:720px;margin:0 auto 22px}
+.tracked-orders h2{font-size:16px}
+.tracked-orders>div{display:grid;gap:8px}
+.tracked-orders button{display:flex;justify-content:space-between;align-items:center;border:1px solid #e8eee7;background:white;border-radius:10px;padding:12px 14px;cursor:pointer}
+.tracked-orders button span{color:#16834a;font-size:11px;font-weight:700}
+.tracking-layout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,.55fr);gap:20px}
+.tracking-main,.tracking-info-card{background:white;border:1px solid #e8eee7;border-radius:16px}
+.tracking-status-card{display:flex;justify-content:space-between;align-items:center;padding:22px;border-bottom:1px solid #edf0eb}
+.tracking-status-card h2{margin:7px 0 0}
+.tracking-status-card .secondary-btn{border:1px solid #dfeae0;cursor:pointer}
+.tracking-timeline{padding:24px}
+.tracking-step{display:grid;grid-template-columns:34px 1fr;gap:14px;position:relative;padding-bottom:24px}
+.tracking-step:not(:last-child)::before{content:'';position:absolute;left:16px;top:32px;bottom:-1px;width:2px;background:#dfe7df}
+.tracking-step.completed:not(:last-child)::before{background:#16834a}
+.timeline-marker{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;border:2px solid #dfe7df;background:white;color:white;font-size:14px;font-weight:800;z-index:1}
+.tracking-step.completed .timeline-marker{border-color:#16834a;background:#16834a}
+.tracking-step.active .timeline-marker{box-shadow:0 0 0 5px #eaf5e9}
+.tracking-step h3{font-size:14px;margin:4px 0}
+.tracking-step p{font-size:12px;color:#63756a;margin:0 0 5px}
+.tracking-step small{font-size:10px;color:#829087}
+.tracking-side{display:grid;gap:14px;align-content:start}
+.tracking-info-card{padding:18px}
+.tracking-info-card h3{margin:0 0 14px;font-size:16px}
+.tracking-info-card dl{margin:0;display:grid;gap:10px}
+.tracking-info-card dl div{display:flex;justify-content:space-between;gap:12px;font-size:12px}
+.tracking-info-card dt{color:#839087}
+.tracking-info-card dd{margin:0;text-align:right;font-weight:700}
+.tracking-info-card p{font-size:12px;line-height:1.7;color:#63756a}
+.tracking-items{display:grid;gap:9px}
+.tracking-items div{display:flex;justify-content:space-between;gap:12px;font-size:12px;border-bottom:1px solid #f0f2ef;padding-bottom:8px}
+.tracking-skeleton{max-width:900px;margin:20px auto;display:grid;gap:10px}
+.tracking-skeleton div{height:80px;border-radius:14px;background:linear-gradient(90deg,#edf1ed,#f7faf7,#edf1ed);background-size:200% 100%;animation:skeleton 1.4s infinite}
+@keyframes skeleton{to{background-position:-200% 0}}
+@media print{.topbar,.tracking-search,.tracked-orders,footer,.tracking-status-card button{display:none!important}.tracking-layout{grid-template-columns:1fr}.tracking-side{break-inside:avoid}}
+@media(max-width:900px){.tracking-layout{grid-template-columns:1fr}.tracking-side{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.tracking-search{grid-template-columns:1fr}.tracking-search .primary-btn{width:100%}.tracking-layout{margin:0}.tracking-side{grid-template-columns:1fr}.tracking-status-card{align-items:flex-start}.tracking-timeline{padding:18px}}
+
+.admin-orders-page{max-width:1160px}
+.admin-order-filters{display:grid;grid-template-columns:minmax(180px,1.5fr) minmax(150px,.7fr) minmax(150px,.7fr) auto;gap:10px;margin:18px 0}
+.admin-order-filters input,.admin-order-filters select,.admin-order-detail select,.admin-shipment-form input{padding:11px;border:1px solid #dfe7df;border-radius:8px;background:white}
+.admin-order-layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(300px,.6fr);gap:16px}
+.admin-order-table,.admin-order-detail{background:white;border:1px solid #e8eee7;border-radius:14px}
+.admin-order-row{width:100%;display:grid;grid-template-columns:1.4fr .5fr auto;gap:12px;align-items:center;text-align:left;border:0;border-bottom:1px solid #edf0eb;background:white;padding:14px;cursor:pointer}
+.admin-order-row.selected{background:#edf7ee}
+.admin-order-row div{display:grid;gap:4px}
+.admin-order-row small{color:#839087}
+.admin-order-detail{height:max-content;padding:18px}
+.admin-order-detail dl{display:grid;gap:8px}
+.admin-order-detail dl div{display:flex;justify-content:space-between;font-size:12px}
+.admin-order-detail dt{color:#839087}
+.admin-order-detail dd{margin:0;font-weight:700}
+.admin-order-detail>label,.admin-shipment-form label{display:grid;gap:7px;font-size:12px;font-weight:700;margin:12px 0}
+.admin-order-detail .save-button,.admin-shipment-form .primary-btn{width:100%;justify-content:center}
+.admin-shipment-form{border-top:1px solid #edf0eb;margin-top:18px;padding-top:15px}
+.admin-shipment-form h3,.admin-history h3{margin:0}
+.admin-history{border-top:1px solid #edf0eb;margin-top:18px;padding-top:15px}
+.admin-history>div{border-left:2px solid #16834a;padding:6px 0 6px 10px;margin-top:10px;display:grid;gap:3px}
+.admin-history small{color:#839087;font-size:10px}
+.admin-history p{font-size:11px;margin:0}
+@media(max-width:900px){.admin-order-layout{grid-template-columns:1fr}.admin-order-detail{order:-1}}
+@media(max-width:620px){.admin-order-filters{grid-template-columns:1fr}.admin-order-row{grid-template-columns:1fr auto}}

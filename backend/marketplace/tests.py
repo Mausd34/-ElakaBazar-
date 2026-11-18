@@ -1,6 +1,6 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
-from .models import Area, Shop, Category, Product, ShopProduct
+from .models import Area, Shop, Category, Product, ShopProduct, Address, Order, OrderStatusHistory
 from decimal import Decimal
 from rest_framework.test import APIClient
 
@@ -14,6 +14,61 @@ class MarketplaceModelTests(TestCase):
         product = Product.objects.create(category=category, name="Rice")
         ShopProduct.objects.create(shop=shop, product=product, price=Decimal("70"), stock=Decimal("10"))
         self.assertEqual(ShopProduct.objects.filter(shop=shop, product=product).count(), 1)
+
+class OrderTrackingApiTests(TestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.owner = User.objects.create_user(username="01730000001", password="DemoPass123!", role="SHOPKEEPER")
+        self.customer = User.objects.create_user(username="01730000002", password="DemoPass123!", role="CUSTOMER")
+        self.other_customer = User.objects.create_user(username="01730000003", password="DemoPass123!", role="CUSTOMER")
+        self.admin = User.objects.create_superuser(username="admin-track", password="DemoPass123!", role="ADMIN")
+        self.area = Area.objects.create(name="Tracking Area")
+        self.shop = Shop.objects.create(owner=self.owner, area=self.area, name="Tracking Shop", phone="01730000001", address="Area 1", status=Shop.Status.APPROVED)
+        self.address = Address.objects.create(user=self.customer, area=self.area, address_line="House 1", phone="01730000002")
+        self.order = Order.objects.create(customer=self.customer, shop=self.shop, address=self.address, subtotal=Decimal("100.00"), delivery_fee=Decimal("30.00"), total=Decimal("130.00"), tracking_number="ELKTRACK123")
+        OrderStatusHistory.objects.create(order=self.order, status=Order.Status.PLACED, changed_by=self.customer, note="Order placed")
+
+    def test_customer_can_track_owned_order(self):
+        client = APIClient()
+        client.force_authenticate(self.customer)
+        response = client.get(f"/api/v1/orders/{self.order.id}/tracking/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["order_number"], self.order.order_number)
+        self.assertIsNotNone(response.data["delivery_address"])
+
+    def test_customer_cannot_track_another_customer_order(self):
+        client = APIClient()
+        client.force_authenticate(self.other_customer)
+        response = client.get(f"/api/v1/orders/{self.order.id}/tracking/")
+        self.assertEqual(response.status_code, 404)
+
+    def test_public_tracking_masks_address_and_rejects_invalid_number(self):
+        client = APIClient()
+        response = client.get("/api/v1/track/ELKTRACK123/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.data["delivery_address"])
+        self.assertEqual(client.get("/api/v1/track/NO/").status_code, 400)
+
+    def test_invalid_status_transition_is_rejected_and_history_is_created(self):
+        client = APIClient()
+        client.force_authenticate(self.admin)
+        response = client.patch(f"/api/v1/admin/orders/{self.order.id}/status/", {"status": "DELIVERED", "note": "Delivery confirmed"})
+        self.assertEqual(response.status_code, 400)
+        response = client.patch(f"/api/v1/admin/orders/{self.order.id}/status/", {"status": "ACCEPTED", "note": "Seller confirmed"})
+        self.assertEqual(response.status_code, 200)
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, Order.Status.ACCEPTED)
+        self.assertEqual(self.order.history.count(), 2)
+
+    def test_seller_cannot_update_another_sellers_order(self):
+        User = get_user_model()
+        other_owner = User.objects.create_user(username="01730000004", password="DemoPass123!", role="SHOPKEEPER")
+        other_shop = Shop.objects.create(owner=other_owner, area=self.area, name="Other Tracking Shop", phone="01730000004", address="Area 2", status=Shop.Status.APPROVED)
+        other_order = Order.objects.create(customer=self.customer, shop=other_shop, address=self.address, subtotal=Decimal("50.00"), delivery_fee=Decimal("30.00"), total=Decimal("80.00"), tracking_number="ELKOTHER123")
+        client = APIClient()
+        client.force_authenticate(self.owner)
+        response = client.patch(f"/api/v1/seller/orders/{other_order.id}/status/", {"status": "ACCEPTED"})
+        self.assertEqual(response.status_code, 404)
 
 class ShopkeeperApiTests(TestCase):
     def setUp(self):

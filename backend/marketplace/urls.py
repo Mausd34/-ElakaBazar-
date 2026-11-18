@@ -1,7 +1,14 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from .views import RegisterView, MeView, AreaList, AddressViewSet, CategoryList, ShopList, ShopDetail, CatalogProductList, ShopkeeperShops, ProductList, ShopProductManageViewSet, CartView, CartItemDetail, CheckoutView, OrderList, OrderDetail, ShopkeeperOrders, ShopkeeperOrderAction, DeliveryJobs, DeliveryAction, AssignDelivery, ReviewCreate
+from .views import (
+    RegisterView, MeView, AreaList, AddressViewSet, CategoryList, ShopList, ShopDetail,
+    CatalogProductList, ShopkeeperShops, ProductList, ShopProductManageViewSet, CartView,
+    CartItemDetail, CheckoutView, OrderList, OrderDetail, CustomerOrderTracking, PublicTracking,
+    AdminOrderList, AdminOrderDetail, AdminOrderStatus, AdminOrderShipment,
+    SellerOrderStatus, SellerOrderShipment, ShopkeeperOrders,
+    ShopkeeperOrderAction, DeliveryJobs, DeliveryAction, AssignDelivery, ReviewCreate,
+)
 
 router = DefaultRouter()
 router.register("addresses", AddressViewSet, basename="address")
@@ -24,8 +31,17 @@ urlpatterns = [
     path("checkout/", CheckoutView.as_view()),
     path("orders/", OrderList.as_view()),
     path("orders/<uuid:pk>/", OrderDetail.as_view()),
+    path("orders/<uuid:pk>/tracking/", CustomerOrderTracking.as_view()),
+    path("orders/<uuid:pk>/history/", CustomerOrderTracking.as_view()),
+    path("track/<str:tracking_number>/", PublicTracking.as_view()),
+    path("admin/orders/", AdminOrderList.as_view()),
+    path("admin/orders/<uuid:pk>/", AdminOrderDetail.as_view()),
+    path("admin/orders/<uuid:pk>/status/", AdminOrderStatus.as_view()),
+    path("admin/orders/<uuid:pk>/shipment/", AdminOrderShipment.as_view()),
     path("shopkeeper/orders/", ShopkeeperOrders.as_view()),
     path("shopkeeper/orders/<uuid:pk>/<str:action_name>/", ShopkeeperOrderAction.as_view()),
+    path("seller/orders/<uuid:pk>/status/", SellerOrderStatus.as_view()),
+    path("seller/orders/<uuid:pk>/shipment/", SellerOrderShipment.as_view()),
     path("delivery/jobs/", DeliveryJobs.as_view()),
     path("delivery/jobs/<uuid:pk>/<str:action_name>/", DeliveryAction.as_view()),
     path("admin/orders/<uuid:pk>/assign/", AssignDelivery.as_view()),

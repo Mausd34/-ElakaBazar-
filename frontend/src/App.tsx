@@ -75,6 +75,7 @@ function App() {
       <label className="location"><MapPin size={17}/><select value={area} onChange={e=>setArea(e.target.value)}>{areas.map(a=><option key={a.id}>{a.name}</option>)}</select></label>
       <div className="searchbox"><Search size={19}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search products or stores..."/></div>
       <nav><Link to="/shops">Stores</Link><Link to="/shopkeeper">For merchants</Link></nav>
+      <Link to="/track-order" className="icon-link"><Package size={18}/><span>Track order</span></Link>
       <Link to="/login" className="icon-link"><UserRound size={19}/><span>Login</span></Link>
       <Link to="/cart" className="cart-link"><ShoppingCart size={19}/><span>Cart</span><b>{count}</b></Link>
     </header>
@@ -102,6 +103,19 @@ function App() {
         <section className="section"><div className="section-head"><div><span className="eyebrow">ক্যাটাগরি অনুযায়ী</span><h2>জনপ্রিয় পণ্য</h2></div><span className="muted">দৈনন্দিন প্রয়োজনীয় জিনিস</span></div><div className="categories">{[['🥬','শাকসবজি'],['🥚','ডিম ও দুধ'],['🍎','ফলমূল'],['🍚','চাল ও ডাল'],['🧴','নিত্যপণ্য'],['🐟','মাছ ও মাংস']].map(([emoji,name])=><button className="category" key={name} onClick={()=>setSearch(name)} style={{backgroundImage:`linear-gradient(180deg, rgba(255,255,255,0.72), rgba(255,255,255,0.9)), url(${categoryImages[name as keyof typeof categoryImages]})`, backgroundSize:'cover', backgroundPosition:'center'}}><span>{emoji}</span><b>{name}</b></button>)}</div></section>
         <section className="section" id="products"><div className="section-head"><div><span className="eyebrow">স্থানীয় দোকান থেকে</span><h2>সেরা পণ্যসমূহ</h2></div><span className="muted">{area}</span></div><div className="product-grid">{visibleProducts.map(p=><article className="product-card" key={p.id}><div className="product-image">{p.image_url?<img src={p.image_url} alt={p.product_name}/>:<span>🛒</span>}<small>{p.category_name}</small></div><div className="product-info"><span className="muted shop-name"><Store size={13}/>{p.shop_name}</span><h3>{p.product_name_bn || p.product_name}</h3><p className="muted">{p.product_name} · {p.unit}</p><div className="product-bottom"><b>৳{Number(p.price).toFixed(2)}</b><button disabled={busy} onClick={()=>addToCart(p)} aria-label="Add to cart"><Plus size={18}/></button></div></div></article>)}</div>{visibleProducts.length===0&&<div className="empty"><Package size={32}/><h3>এখনও কোনো পণ্য পাওয়া যায়নি</h3><p>অন্য এলাকা বা পণ্য দিয়ে খুঁজে দেখুন।</p></div>}</section>
         <section className="section"><div className="section-head"><div><span className="eyebrow">আপনার আবাসনের কাছাকাছি</span><h2>আপনার এলাকার দোকান</h2></div><Link to="/shops" className="text-link">সব দোকান দেখুন →</Link></div><div className="shop-grid">{shops.map(s=><div className="shop-card" key={s.id}><div className="shop-avatar"><Store size={26}/></div><div><h3>{s.name}</h3><p className="muted">{s.area_name} · {s.address}</p><small>ডেলিভারি ৳{s.delivery_fee} · মিনিমাম ৳{s.minimum_order}</small></div></div>)}</div></section>
+        <section className="section team-section">
+          <div className="section-head"><div><span className="eyebrow">আমাদের পরিচয়</span><h2>আমাদের টিম</h2></div></div>
+          <div className="team-grid">
+            <figure className="team-member">
+              <img src="/images/team-member-1.png" alt="Md. Pronay Islam"/>
+              <figcaption>Md. Pronay Islam</figcaption>
+            </figure>
+            <figure className="team-member">
+              <img src="/images/team-member-2.png" alt="Md Masud Rana"/>
+              <figcaption>Md Masud Rana</figcaption>
+            </figure>
+          </div>
+        </section>
         <section className="partner">
           <div className="partner-copy">
             <span className="eyebrow">আমাদের সঙ্গে বিকশিত হোন</span>
@@ -115,6 +129,8 @@ function App() {
         </section>
       </main>}/>
       <Route path="/shops" element={<main className="page"><h1>আপনার এলাকার দোকান</h1><div className="shop-grid">{shops.map(s=><div className="shop-card" key={s.id}><div className="shop-avatar"><Store/></div><div><h3>{s.name}</h3><p>{s.area_name} · {s.address}</p></div></div>)}</div></main>}/>
+      <Route path="/track-order" element={<OrderTrackingPage/>}/>
+      <Route path="/admin/orders" element={<AdminOrdersPage/>}/>
       <Route path="/login" element={<Login onLogin={async(u)=>{await login(u.username,u.password);await refreshCart();const profile=await api.get('/auth/me/');navigate(profile.data.role==='SHOPKEEPER'?'/shopkeeper':'/')}}/>}/>
       <Route path="/cart" element={<CartPage cart={cart} refresh={refreshCart} clear={clearCart}/>}/>
       <Route path="/shopkeeper" element={<ShopkeeperPage/>}/>
@@ -122,6 +138,147 @@ function App() {
     </Routes>
     <footer><div className="footer-brand">ElakaBazar</div><p>আপনার এলাকার বাজার, এখন আপনার হাতেই।</p><small>© 2026 ElakaBazar. Local shops, connected.</small></footer>
   </div>
+}
+
+function OrderTrackingPage() {
+ type TrackedOrder = {
+  id:string; order_number:string; tracking_number:string; status:string; created_at:string; updated_at:string;
+  estimated_delivery:string|null; courier_name:string; payment_status:string; payment_method:string; total:string;
+  delivery_address:{address_line:string;landmark:string;area:string;phone:string}|null;
+  items:{product_name:string;unit:string;quantity:string;unit_price:string;line_total:string}[];
+  shipment:{courier_name:string;tracking_number:string;shipment_status:string;shipped_at:string|null;delivered_at:string|null}|null;
+  history:{status:string;previous_status:string;description:string;location:string;created_at:string}[];
+ }
+ const [trackingNumber,setTrackingNumber]=useState('')
+ const [order,setOrder]=useState<TrackedOrder|null>(null)
+ const [orders,setOrders]=useState<TrackedOrder[]>([])
+ const [loading,setLoading]=useState(false)
+ const [error,setError]=useState('')
+ const stages = [
+  {status:'PLACED',title:'Order placed',description:'We received your order.'},
+  {status:'ACCEPTED',title:'Order confirmed',description:'The seller confirmed your order.'},
+  {status:'PREPARING',title:'Seller processing',description:'The seller is preparing your products.'},
+  {status:'READY',title:'Preparing for shipment',description:'Your order is packed and ready.'},
+  {status:'PICKED_UP',title:'Shipped',description:'The courier has collected your package.'},
+  {status:'OUT_FOR_DELIVERY',title:'Out for delivery',description:'The courier is on the way.'},
+  {status:'DELIVERED',title:'Delivered',description:'Your order was delivered.'},
+ ]
+ const statusIndex = (status:string) => stages.findIndex(stage=>stage.status===status)
+ async function loadPublic(number:string) {
+  const clean=number.trim()
+  if(!clean){setError('Enter an order or tracking number.');return}
+  setLoading(true);setError('')
+  try {
+   const response=await api.get(`/track/${encodeURIComponent(clean)}/`)
+   setOrder(response.data)
+  } catch(e:any) {
+   setOrder(null)
+   setError(e.response?.status===404?'No order was found for this tracking number.':'Unable to load tracking details. Please try again.')
+  } finally {setLoading(false)}
+ }
+ async function loadAccountOrders() {
+  if(!localStorage.getItem('access')){setOrders([]);return}
+  try {
+   const response=await api.get('/orders/')
+   setOrders(response.data.results||response.data)
+  } catch {}
+ }
+ async function loadByOrderId(id:string) {
+  setLoading(true);setError('')
+  try {
+   const response=await api.get(`/orders/${id}/tracking/`)
+   setOrder(response.data)
+   setTrackingNumber(response.data.tracking_number||'')
+  } catch(e:any) {setError(e.response?.status===404?'Order not found.':'Unable to load order tracking.') }
+  finally {setLoading(false)}
+ }
+ useEffect(()=>{loadAccountOrders()},[])
+ useEffect(()=>{
+  if(!order?.tracking_number)return
+  const timer=window.setInterval(()=>loadPublic(order.tracking_number),30000)
+  return ()=>window.clearInterval(timer)
+ },[order?.tracking_number])
+ const currentIndex=statusIndex(order?.status||'PLACED')
+ return <main className="page tracking-page">
+  <div className="tracking-heading"><span className="eyebrow">ORDER TRACKING</span><h1>Track your order</h1><p className="muted">Check live delivery progress with your tracking number.</p></div>
+  <form className="tracking-search" onSubmit={e=>{e.preventDefault();loadPublic(trackingNumber)}}>
+   <label>Tracking number<input value={trackingNumber} onChange={e=>setTrackingNumber(e.target.value)} placeholder="ELK-..." /></label>
+   <button type="button" className="primary-btn" disabled={loading} onClick={()=>loadPublic(trackingNumber)}>{loading?'Checking...':'Track order'}</button>
+  </form>
+  {error&&<div className="dashboard-message error-message">{error}</div>}
+  {orders.length>0&&<section className="tracked-orders"><h2>Your recent orders</h2><div>{orders.map(item=><button key={item.id} onClick={()=>loadByOrderId(item.id)}><b>{item.order_number}</b><span>{item.status}</span></button>)}</div></section>}
+  {loading&&!order&&<div className="tracking-skeleton" aria-label="Loading tracking details"><div/><div/><div/></div>}
+  {!loading&&!order&&!error&&<div className="empty"><Package size={36}/><h3>No tracking details yet</h3><p>Enter a tracking number or select one of your recent orders.</p></div>}
+  {order&&<div className="tracking-layout">
+   <section className="tracking-main">
+    <div className="tracking-status-card"><div><span className="eyebrow">CURRENT STATUS</span><h2>{stages[Math.max(currentIndex,0)].title}</h2></div><button className="secondary-btn" onClick={()=>window.print()}>Print</button></div>
+    <div className="tracking-timeline">
+     {stages.map((stage,index)=>{
+      const completed=index<=currentIndex
+      const historyItem=order.history.find(h=>h.status===stage.status)
+      return <div className={`tracking-step ${completed?'completed':''} ${index===currentIndex?'active':''}`} key={stage.status}><div className="timeline-marker">{completed?'✓':''}</div><div><h3>{stage.title}</h3><p>{stage.description}</p>{historyItem&&<small>{new Date(historyItem.created_at).toLocaleString('en-BD',{timeZone:'Asia/Dhaka'})}{historyItem.location?` · ${historyItem.location}`:''}</small>}</div></div>
+     })}
+    </div>
+   </section>
+   <aside className="tracking-side">
+    <section className="tracking-info-card"><h3>Order details</h3><dl><div><dt>Order number</dt><dd>{order.order_number}</dd></div><div><dt>Tracking number</dt><dd>{order.tracking_number||'Not assigned'}</dd></div><div><dt>Order date</dt><dd>{new Date(order.created_at).toLocaleString('en-BD',{timeZone:'Asia/Dhaka'})}</dd></div><div><dt>Estimated delivery</dt><dd>{order.estimated_delivery||'Awaiting update'}</dd></div><div><dt>Payment</dt><dd>{order.payment_status}</dd></div><div><dt>Total</dt><dd>৳{Number(order.total).toFixed(2)}</dd></div></dl></section>
+    <section className="tracking-info-card"><h3>Shipment</h3><dl><div><dt>Courier</dt><dd>{order.shipment?.courier_name||order.courier_name||'To be assigned'}</dd></div><div><dt>Tracking</dt><dd>{order.shipment?.tracking_number||order.tracking_number||'Pending'}</dd></div></dl></section>
+    {order.delivery_address&&<section className="tracking-info-card"><h3>Delivery address</h3><p>{order.delivery_address.address_line}{order.delivery_address.landmark?`, ${order.delivery_address.landmark}`:''}<br/>{order.delivery_address.area}<br/>{order.delivery_address.phone}</p></section>}
+    <section className="tracking-info-card"><h3>Products</h3><div className="tracking-items">{order.items.map((item,index)=><div key={`${item.product_name}-${index}`}><span>{item.product_name} × {item.quantity} {item.unit}</span><b>৳{Number(item.line_total).toFixed(2)}</b></div>)}</div></section>
+   </aside>
+  </div>}
+ </main>
+}
+
+function AdminOrdersPage() {
+ type AdminOrder = {
+  id:string; order_number:string; tracking_number:string; status:string; created_at:string;
+  customer_name?:string; estimated_delivery:string|null; courier_name:string; payment_status:string; total:string;
+  items:{product_name:string;quantity:string;line_total:string}[];
+  history:{status:string;previous_status:string;description:string;location:string;created_at:string}[];
+ }
+ const [orders,setOrders]=useState<AdminOrder[]>([])
+ const [search,setSearch]=useState('')
+ const [status,setStatus]=useState('')
+ const [date,setDate]=useState('')
+ const [selected,setSelected]=useState<AdminOrder|null>(null)
+ const [statusValue,setStatusValue]=useState('')
+ const [courier,setCourier]=useState('')
+ const [tracking,setTracking]=useState('')
+ const [estimated,setEstimated]=useState('')
+ const [message,setMessage]=useState('')
+ async function load() {
+  setMessage('')
+  try {
+   const response=await api.get('/admin/orders/',{params:{search:search||undefined,status:status||undefined,date:date||undefined}})
+   setOrders(response.data.results||response.data)
+  } catch(e:any) {setMessage(e.response?.status===403?'Admin account required.':'Unable to load orders.') }
+ }
+ useEffect(()=>{load()},[])
+ async function updateStatus() {
+  if(!selected||!statusValue)return
+  try {
+   await api.patch(`/admin/orders/${selected.id}/status/`,{status:statusValue})
+   setMessage('Order status updated.')
+   await load()
+  } catch(e:any) {setMessage(e.response?.data?.detail||'Status update failed.') }
+ }
+ async function saveShipment() {
+  if(!selected||!courier.trim()||!tracking.trim()) {setMessage('Courier and tracking number are required.');return}
+  try {
+   await api.post(`/admin/orders/${selected.id}/shipment/`,{courier_name:courier,tracking_number:tracking,estimated_delivery:estimated||null})
+   setMessage('Shipment details saved.')
+   await load()
+  } catch(e:any) {setMessage(e.response?.data?.detail||'Shipment update failed.') }
+ }
+ return <main className="page admin-orders-page">
+  <div className="shopkeeper-heading"><div><span className="eyebrow">ADMIN MANAGEMENT</span><h1>Order management</h1></div></div>
+  {message&&<div className="dashboard-message error-message">{message}</div>}
+  <div className="admin-order-filters"><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search order, tracking or customer"/><select value={status} onChange={e=>setStatus(e.target.value)}><option value="">All statuses</option>{['PLACED','ACCEPTED','PREPARING','READY','PICKED_UP','OUT_FOR_DELIVERY','DELIVERED','REJECTED','CANCELLED'].map(value=><option key={value} value={value}>{value}</option>)}</select><input type="date" value={date} onChange={e=>setDate(e.target.value)} /><button className="primary-btn" onClick={load}>Search</button></div>
+  <div className="admin-order-layout"><section className="admin-order-table">{orders.length===0?<div className="empty"><Package size={30}/><p>No orders found.</p></div>:<div>{orders.map(order=><button key={order.id} className={`admin-order-row ${selected?.id===order.id?'selected':''}`} onClick={()=>{setSelected(order);setStatusValue(order.status);setCourier(order.courier_name||'');setTracking(order.tracking_number||'');setEstimated(order.estimated_delivery||'')}}><div><b>{order.order_number}</b><small>{new Date(order.created_at).toLocaleString('en-BD',{timeZone:'Asia/Dhaka'})}</small></div><b>৳{Number(order.total).toFixed(2)}</b><span className={`order-status status-${order.status.toLowerCase()}`}>{order.status}</span></button>)}</div>}</section>
+  {selected&&<aside className="admin-order-detail"><h2>{selected.order_number}</h2><dl><div><dt>Tracking</dt><dd>{selected.tracking_number||'Not assigned'}</dd></div><div><dt>Payment</dt><dd>{selected.payment_status}</dd></div><div><dt>Estimated delivery</dt><dd>{selected.estimated_delivery||'Awaiting update'}</dd></div></dl><label>Status<select value={statusValue} onChange={e=>setStatusValue(e.target.value)}>{['PLACED','ACCEPTED','PREPARING','READY','PICKED_UP','OUT_FOR_DELIVERY','DELIVERED','REJECTED','CANCELLED'].map(value=><option key={value} value={value}>{value}</option>)}</select></label><button className="save-button" onClick={updateStatus}>Update status</button><div className="admin-shipment-form"><h3>Shipment</h3><label>Courier<input value={courier} onChange={e=>setCourier(e.target.value)} placeholder="Steadfast, RedX, manual"/></label><label>Tracking number<input value={tracking} onChange={e=>setTracking(e.target.value)}/></label><label>Estimated delivery<input type="date" value={estimated} onChange={e=>setEstimated(e.target.value)}/></label><button className="primary-btn" onClick={saveShipment}>Save shipment</button></div><div className="admin-history"><h3>Tracking history</h3>{selected.history.map((entry,index)=><div key={`${entry.status}-${index}`}><b>{entry.status}</b><small>{new Date(entry.created_at).toLocaleString('en-BD',{timeZone:'Asia/Dhaka'})}</small><p>{entry.description||'Status updated'}{entry.location?` · ${entry.location}`:''}</p></div>)}</div></aside>}
+  </div>
+ </main>
 }
 
 function Login({onLogin}:{onLogin:(u:{username:string;password:string})=>void}) {
