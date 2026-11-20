@@ -2,9 +2,9 @@ name: ElakaBazar CI
 
 on:
   push:
-    branches: ["main", "feature/**"]
+    branches: ["main", "feature/**", "integration/**"]
   pull_request:
-    branches: ["main"]
+    branches: ["main", "integration/**"]
 
 permissions:
   contents: read
