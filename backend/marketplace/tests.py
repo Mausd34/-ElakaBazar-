@@ -4,6 +4,8 @@ from .models import Area, Shop, Category, Product, ShopProduct, Address, Order, 
 from decimal import Decimal
 from rest_framework.test import APIClient
 
+User = get_user_model()
+
 class MarketplaceModelTests(TestCase):
     def test_shop_product_unique_per_shop(self):
         User = get_user_model()
