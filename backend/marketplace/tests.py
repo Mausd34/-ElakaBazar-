@@ -121,7 +121,7 @@ class ShopkeeperApiTests(TestCase):
             "/api/v1/shop-products/manage/",
             {"shop": self.other_shop.id, "product": self.product.id, "price": "45.00", "stock": "12"},
         )
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 400)
 
     def test_listing_update_cannot_move_product_to_another_shop(self):
         listing = ShopProduct.objects.create(
@@ -136,10 +136,10 @@ class ShopkeeperApiTests(TestCase):
             {"shop": self.other_shop.id, "price": "50.00"},
         )
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 400)
         listing.refresh_from_db()
         self.assertEqual(listing.shop, self.shop)
-        self.assertEqual(listing.price, Decimal("50.00"))
+        self.assertEqual(listing.price, Decimal("45.00"))
 
     def test_shopkeeper_can_register_shop_pending_review(self):
         response = self.client.post(
