@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 import secrets
 from django.db import transaction
 from django.db.models import Q
@@ -9,7 +9,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import User, Area, Address, Shop, Category, Product, ShopProduct, Cart, CartItem, Order, OrderItem, OrderStatusHistory, Shipment, Review
-from .serializers import RegisterSerializer, UserSerializer, AreaSerializer, AddressSerializer, ShopSerializer, CatalogProductSerializer, CategorySerializer, ShopProductSerializer, CartSerializer, OrderSerializer, OrderTrackingSerializer, ShipmentSerializer, ReviewSerializer
+from .serializers import RegisterSerializer, UserSerializer, AreaSerializer, AddressSerializer, ShopSerializer, CatalogProductSerializer, ProductCatalogSerializer, CategorySerializer, ShopProductSerializer, CartSerializer, OrderSerializer, OrderTrackingSerializer, ShipmentSerializer, ReviewSerializer
 from .permissions import IsShopkeeper, IsDeliveryAgent
 
 class RegisterView(generics.CreateAPIView):
@@ -56,6 +56,24 @@ class CatalogProductList(generics.ListAPIView):
     permission_classes = [IsShopkeeper]
     queryset = Product.objects.filter(is_active=True).select_related("category").order_by("category__name", "name")
 
+class ProductCatalogList(generics.ListAPIView):
+    serializer_class = ProductCatalogSerializer
+    permission_classes = [permissions.AllowAny]
+    def get_queryset(self):
+        qs = Product.objects.filter(is_active=True).select_related("category")
+        category = self.request.query_params.get("category")
+        search = self.request.query_params.get("search")
+        if category: qs = qs.filter(category_id=category)
+        if search: qs = qs.filter(Q(name__icontains=search) | Q(name_bn__icontains=search))
+        return qs.order_by("name")
+
+
+class ShopApplication(generics.CreateAPIView):
+    serializer_class = ShopSerializer
+    permission_classes = [IsShopkeeper]
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user, status=Shop.Status.PENDING)
+
 class ShopkeeperShops(viewsets.ModelViewSet):
     serializer_class = ShopSerializer
     permission_classes = [IsShopkeeper]
@@ -87,8 +105,7 @@ class ShopProductManageViewSet(viewsets.ModelViewSet):
     permission_classes = [IsShopkeeper]
     def get_queryset(self): return ShopProduct.objects.filter(shop__owner=self.request.user).select_related("shop", "product")
     def perform_create(self, serializer):
-        shop = get_object_or_404(Shop, id=self.request.data.get("shop"), owner=self.request.user)
-        serializer.save(shop=shop)
+        serializer.save(shop=serializer.validated_data["shop"])
     def perform_update(self, serializer):
         serializer.save(shop=self.get_object().shop)
 
@@ -99,9 +116,12 @@ class CartView(APIView):
         return Response(CartSerializer(cart).data)
     def post(self, request):
         shop_product_id = request.data.get("shop_product")
-        quantity = Decimal(str(request.data.get("quantity", "1")))
-        if quantity <= 0: return Response({"detail":"Quantity must be positive."}, status=400)
-        sp = get_object_or_404(ShopProduct.objects.select_related("shop"), id=shop_product_id, is_available=True, shop__status=Shop.Status.APPROVED)
+        try:
+            quantity = Decimal(str(request.data.get("quantity", "1")))
+        except (InvalidOperation, TypeError, ValueError):
+            return Response({"detail": "Enter a valid quantity."}, status=400)
+        if not quantity.is_finite() or quantity <= 0: return Response({"detail":"Quantity must be positive."}, status=400)
+        sp = get_object_or_404(ShopProduct.objects.select_related("shop"), id=shop_product_id, is_available=True, shop__status=Shop.Status.APPROVED, shop__is_open=True)
         if sp.stock < quantity: return Response({"detail":"Insufficient stock."}, status=400)
         cart, _ = Cart.objects.get_or_create(customer=request.user)
         if cart.shop_id and cart.shop_id != sp.shop_id:
@@ -109,7 +129,11 @@ class CartView(APIView):
         cart.shop = sp.shop
         cart.save()
         item, created = CartItem.objects.get_or_create(cart=cart, shop_product=sp, defaults={"quantity":quantity})
-        if not created: item.quantity += quantity; item.save()
+        if not created:
+            new_quantity = item.quantity + quantity
+            if new_quantity > sp.stock: return Response({"detail":"Insufficient stock for the requested quantity."}, status=400)
+            item.quantity = new_quantity
+            item.save()
         return Response(CartSerializer(cart).data, status=201)
     def delete(self, request):
         cart, _ = Cart.objects.get_or_create(customer=request.user)
@@ -120,7 +144,11 @@ class CartItemDetail(APIView):
     permission_classes = [permissions.IsAuthenticated]
     def patch(self, request, pk):
         item = get_object_or_404(CartItem, pk=pk, cart__customer=request.user)
-        quantity = Decimal(str(request.data.get("quantity", item.quantity)))
+        try:
+            quantity = Decimal(str(request.data.get("quantity", item.quantity)))
+        except (InvalidOperation, TypeError, ValueError):
+            return Response({"detail": "Enter a valid quantity."}, status=400)
+        if not quantity.is_finite(): return Response({"detail": "Enter a finite quantity."}, status=400)
         if quantity <= 0: item.delete()
         elif quantity > item.shop_product.stock: return Response({"detail":"Insufficient stock."}, status=400)
         else: item.quantity = quantity; item.save()
@@ -174,12 +202,14 @@ class CheckoutView(APIView):
 class OrderList(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = OrderSerializer
-    def get_queryset(self): return Order.objects.filter(customer=self.request.user).prefetch_related("items").order_by("-created_at")
+    def get_queryset(self):
+        return Order.objects.filter(customer=self.request.user).select_related("shop", "address__area").prefetch_related("items", "history").order_by("-created_at")
 
 class OrderDetail(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = OrderSerializer
-    def get_queryset(self): return Order.objects.filter(customer=self.request.user).prefetch_related("items")
+    def get_queryset(self):
+        return Order.objects.filter(customer=self.request.user).select_related("shop", "address__area").prefetch_related("items", "history")
 
 ALLOWED_ORDER_TRANSITIONS = {
     Order.Status.PLACED: {Order.Status.ACCEPTED, Order.Status.REJECTED, Order.Status.CANCELLED},
@@ -274,7 +304,7 @@ class AdminOrderShipment(APIView):
 class ShopkeeperOrders(generics.ListAPIView):
     serializer_class = OrderSerializer
     permission_classes = [IsShopkeeper]
-    def get_queryset(self): return Order.objects.filter(shop__owner=self.request.user).prefetch_related("items").order_by("-created_at")
+    def get_queryset(self): return Order.objects.filter(shop__owner=self.request.user).select_related("shop", "address__area").prefetch_related("items", "history").order_by("-created_at")
 
 class ShopkeeperOrderAction(APIView):
     permission_classes = [IsShopkeeper]
@@ -369,6 +399,61 @@ class AssignDelivery(APIView):
         agent = get_object_or_404(User, pk=request.data.get("agent"), role=User.Role.DELIVERY_AGENT)
         order.delivery_agent = agent; order.save(update_fields=["delivery_agent", "updated_at"])
         return Response({"detail":"Delivery agent assigned."})
+
+class AdminOverview(APIView):
+    permission_classes = [permissions.IsAdminUser]
+    def get(self, request):
+        from django.db.models import Sum
+        return Response({
+            "shops_total": Shop.objects.count(),
+            "shops_pending": Shop.objects.filter(status=Shop.Status.PENDING).count(),
+            "orders_total": Order.objects.count(),
+            "orders_active": Order.objects.exclude(status__in=[Order.Status.DELIVERED, Order.Status.REJECTED, Order.Status.CANCELLED]).count(),
+            "orders_delivered": Order.objects.filter(status=Order.Status.DELIVERED).count(),
+            "customers": User.objects.filter(role=User.Role.CUSTOMER).count(),
+            "shopkeepers": User.objects.filter(role=User.Role.SHOPKEEPER).count(),
+            "delivery_agents": User.objects.filter(role=User.Role.DELIVERY_AGENT).count(),
+            "gross_sales": Order.objects.filter(status=Order.Status.DELIVERED).aggregate(total=Sum("total"))["total"] or Decimal("0.00"),
+        })
+
+class AdminShopList(generics.ListAPIView):
+    serializer_class = ShopSerializer
+    permission_classes = [permissions.IsAdminUser]
+    def get_queryset(self):
+        qs = Shop.objects.select_related("owner", "area").order_by("-created_at")
+        status_filter = self.request.query_params.get("status")
+        if status_filter: qs = qs.filter(status=status_filter.upper())
+        return qs
+
+class AdminShopAction(APIView):
+    permission_classes = [permissions.IsAdminUser]
+    actions = {"approve": Shop.Status.APPROVED, "reject": Shop.Status.REJECTED, "suspend": Shop.Status.SUSPENDED}
+    def post(self, request, pk, action_name):
+        if action_name not in self.actions:
+            return Response({"detail": "Invalid shop action."}, status=400)
+        shop = get_object_or_404(Shop, pk=pk)
+        shop.status = self.actions[action_name]
+        shop.save(update_fields=["status"])
+        return Response(ShopSerializer(shop).data)
+
+class AdminOrders(generics.ListAPIView):
+    serializer_class = OrderSerializer
+    permission_classes = [permissions.IsAdminUser]
+    def get_queryset(self):
+        qs = Order.objects.select_related("shop", "customer", "delivery_agent", "address__area").prefetch_related("items", "history").order_by("-created_at")
+        status_filter = self.request.query_params.get("status")
+        if status_filter: qs = qs.filter(status=status_filter.upper())
+        return qs
+
+class AdminDeliveryAgents(generics.ListAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAdminUser]
+    queryset = User.objects.filter(role=User.Role.DELIVERY_AGENT, is_active=True).order_by("full_name", "username")
+
+class AdminProductCreate(generics.CreateAPIView):
+    serializer_class = ProductCatalogSerializer
+    permission_classes = [permissions.IsAdminUser]
+
 
 class ReviewCreate(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
