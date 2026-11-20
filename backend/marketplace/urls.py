@@ -3,11 +3,12 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import (
     RegisterView, MeView, AreaList, AddressViewSet, CategoryList, ShopList, ShopDetail,
-    CatalogProductList, ShopkeeperShops, ProductList, ShopProductManageViewSet, CartView,
+    CatalogProductList, ProductCatalogList, ShopApplication, ShopkeeperShops, ProductList, ShopProductManageViewSet, CartView,
     CartItemDetail, CheckoutView, OrderList, OrderDetail, CustomerOrderTracking, PublicTracking,
     AdminOrderList, AdminOrderDetail, AdminOrderStatus, AdminOrderShipment,
     SellerOrderStatus, SellerOrderShipment, ShopkeeperOrders,
     ShopkeeperOrderAction, DeliveryJobs, DeliveryAction, AssignDelivery, ReviewCreate,
+    AdminOverview, AdminShopList, AdminShopAction, AdminOrders, AdminDeliveryAgents, AdminProductCreate,
 )
 
 router = DefaultRouter()
@@ -25,7 +26,8 @@ urlpatterns = [
     path("shops/", ShopList.as_view()),
     path("shops/<int:pk>/", ShopDetail.as_view()),
     path("products/", ProductList.as_view()),
-    path("catalog/products/", CatalogProductList.as_view()),
+    path("catalog/products/", ProductCatalogList.as_view()),
+    path("shopkeeper/shops/apply/", ShopApplication.as_view()),
     path("cart/", CartView.as_view()),
     path("cart/items/<int:pk>/", CartItemDetail.as_view()),
     path("checkout/", CheckoutView.as_view()),
@@ -34,7 +36,12 @@ urlpatterns = [
     path("orders/<uuid:pk>/tracking/", CustomerOrderTracking.as_view()),
     path("orders/<uuid:pk>/history/", CustomerOrderTracking.as_view()),
     path("track/<str:tracking_number>/", PublicTracking.as_view()),
-    path("admin/orders/", AdminOrderList.as_view()),
+    path("admin/overview/", AdminOverview.as_view()),
+    path("admin/shops/", AdminShopList.as_view()),
+    path("admin/shops/<int:pk>/<str:action_name>/", AdminShopAction.as_view()),
+    path("admin/orders/", AdminOrders.as_view()),
+    path("admin/delivery-agents/", AdminDeliveryAgents.as_view()),
+    path("admin/products/", AdminProductCreate.as_view()),
     path("admin/orders/<uuid:pk>/", AdminOrderDetail.as_view()),
     path("admin/orders/<uuid:pk>/status/", AdminOrderStatus.as_view()),
     path("admin/orders/<uuid:pk>/shipment/", AdminOrderShipment.as_view()),
