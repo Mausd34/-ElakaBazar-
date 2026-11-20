@@ -48,6 +48,8 @@ class CatalogProductSerializer(serializers.ModelSerializer):
 class CategorySerializer(serializers.ModelSerializer):
     class Meta: model = Category; fields = ["id", "name", "name_bn", "image_url"]
 
+ProductCatalogSerializer = CatalogProductSerializer
+
 class ShopProductSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source="product.name", read_only=True)
     product_name_bn = serializers.CharField(source="product.name_bn", read_only=True)
@@ -77,12 +79,24 @@ class CartSerializer(serializers.ModelSerializer):
 class OrderItemSerializer(serializers.ModelSerializer):
     class Meta: model = OrderItem; fields = ["product_name", "unit", "quantity", "unit_price", "line_total"]
 
+class OrderStatusHistorySerializer(serializers.ModelSerializer):
+    changed_by_name = serializers.CharField(source="changed_by.full_name", read_only=True)
+    class Meta:
+        model = OrderStatusHistory
+        fields = ["status", "changed_by_name", "note", "created_at"]
+
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
+    history = OrderStatusHistorySerializer(many=True, read_only=True)
     shop_name = serializers.CharField(source="shop.name", read_only=True)
+    customer_name = serializers.CharField(source="customer.full_name", read_only=True)
+    customer_phone = serializers.CharField(source="customer.phone", read_only=True, allow_null=True)
+    address_line = serializers.CharField(source="address.address_line", read_only=True)
+    area_name = serializers.CharField(source="address.area.name", read_only=True)
+    delivery_agent_name = serializers.CharField(source="delivery_agent.full_name", read_only=True, allow_null=True)
     class Meta:
         model = Order
-        fields = ["id", "order_number", "shop_name", "subtotal", "delivery_fee", "total", "payment_method", "payment_status", "status", "created_at", "items"]
+        fields = ["id", "order_number", "shop_name", "customer_name", "customer_phone", "address_line", "area_name", "subtotal", "delivery_fee", "total", "payment_method", "payment_status", "status", "delivery_agent", "delivery_agent_name", "created_at", "items", "history"]
 
 class OrderHistorySerializer(serializers.ModelSerializer):
     status_label = serializers.CharField(source="get_status_display", read_only=True)
