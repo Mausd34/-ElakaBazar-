@@ -5,7 +5,7 @@ api.interceptors.request.use(config => {
   const path = new URL(config.url || '', config.baseURL).pathname.replace(/\/+$/, '')
   const method = config.method?.toLowerCase()
   const publicReadPaths = ['/areas', '/categories', '/shops', '/products']
-  const publicAuthPaths = ['/register', '/token', '/token/refresh']
+  const publicAuthPaths = ['/auth/register', '/token', '/token/refresh']
   const isPublicRead = method === 'get' && publicReadPaths.includes(path)
   const isPublicAuth = publicAuthPaths.includes(path)
   if (token && !isPublicRead && !isPublicAuth) config.headers.Authorization = `Bearer ${token}`

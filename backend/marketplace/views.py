@@ -201,13 +201,13 @@ class OrderList(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = OrderSerializer
     def get_queryset(self):
-        return Order.objects.filter(customer=self.request.user).select_related("shop", "address__area").prefetch_related("items", "history").order_by("-created_at")
+        return Order.objects.filter(customer=self.request.user).select_related("shop", "address__area", "review").prefetch_related("items", "history").order_by("-created_at")
 
 class OrderDetail(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = OrderSerializer
     def get_queryset(self):
-        return Order.objects.filter(customer=self.request.user).select_related("shop", "address__area").prefetch_related("items", "history")
+        return Order.objects.filter(customer=self.request.user).select_related("shop", "address__area", "review").prefetch_related("items", "history")
 
 ALLOWED_ORDER_TRANSITIONS = {
     Order.Status.PLACED: {Order.Status.ACCEPTED, Order.Status.REJECTED, Order.Status.CANCELLED},
@@ -302,7 +302,7 @@ class AdminOrderShipment(APIView):
 class ShopkeeperOrders(generics.ListAPIView):
     serializer_class = OrderSerializer
     permission_classes = [IsShopkeeper]
-    def get_queryset(self): return Order.objects.filter(shop__owner=self.request.user).select_related("shop", "address__area").prefetch_related("items", "history").order_by("-created_at")
+    def get_queryset(self): return Order.objects.filter(shop__owner=self.request.user).select_related("shop", "address__area", "review").prefetch_related("items", "history").order_by("-created_at")
 
 class ShopkeeperOrderAction(APIView):
     permission_classes = [IsShopkeeper]
@@ -373,7 +373,7 @@ class SellerOrderShipment(APIView):
 class DeliveryJobs(generics.ListAPIView):
     serializer_class = OrderSerializer
     permission_classes = [IsDeliveryAgent]
-    def get_queryset(self): return Order.objects.filter(delivery_agent=self.request.user).exclude(status__in=[Order.Status.DELIVERED, Order.Status.CANCELLED, Order.Status.REJECTED]).prefetch_related("items")
+    def get_queryset(self): return Order.objects.filter(delivery_agent=self.request.user).exclude(status__in=[Order.Status.DELIVERED, Order.Status.CANCELLED, Order.Status.REJECTED]).select_related("shop", "customer", "address__area", "review").prefetch_related("items")
 
 class DeliveryAction(APIView):
     permission_classes = [IsDeliveryAgent]
@@ -439,7 +439,7 @@ class AdminOrders(generics.ListAPIView):
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAdminUser]
     def get_queryset(self):
-        qs = Order.objects.select_related("shop", "customer", "delivery_agent", "address__area").prefetch_related("items", "history").order_by("-created_at")
+        qs = Order.objects.select_related("shop", "customer", "delivery_agent", "address__area", "review").prefetch_related("items", "history").order_by("-created_at")
         status_filter = self.request.query_params.get("status")
         if status_filter: qs = qs.filter(status=status_filter.upper())
         return qs

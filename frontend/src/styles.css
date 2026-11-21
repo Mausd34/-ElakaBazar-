@@ -181,3 +181,15 @@
 .shop-application-form label:nth-child(2){grid-column:1/-1}
 .shop-application-form button{width:max-content;margin:0}
 @media(max-width:620px){.shop-application-form{grid-template-columns:1fr;padding:16px}.shop-application-form label:nth-child(2){grid-column:auto}.shop-application-form button{width:100%}}
+
+.review-panel{border-top:1px solid #e9eee8;margin-top:22px;padding-top:18px}
+.review-panel h3{margin:0 0 12px}
+.review-form{display:grid;gap:12px}
+.review-form label{display:grid;gap:7px;font-size:12px;font-weight:700;color:#405548}
+.review-form select,.review-form textarea{width:100%;padding:10px;border:1px solid #dfe7df;border-radius:8px;background:#fff;color:#263b2d}
+.review-form textarea{min-height:90px;resize:vertical}
+.review-form button{justify-self:start}
+.location-form{max-width:640px;display:grid;gap:14px;background:#fff;border:1px solid #e9eee8;border-radius:15px;padding:22px}
+.location-form label{display:grid;gap:7px;font-size:12px;font-weight:700;color:#405548}
+.location-form select{padding:11px;border:1px solid #dfe7df;border-radius:8px;background:#fff;color:#263b2d}
+.location-form button{justify-self:start}

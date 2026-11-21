@@ -105,6 +105,7 @@ class OrderStatusHistorySerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
     history = OrderStatusHistorySerializer(many=True, read_only=True)
+    has_review = serializers.SerializerMethodField()
     shop_name = serializers.CharField(source="shop.name", read_only=True)
     customer_name = serializers.CharField(source="customer.full_name", read_only=True)
     customer_phone = serializers.CharField(source="customer.phone", read_only=True, allow_null=True)
@@ -113,7 +114,14 @@ class OrderSerializer(serializers.ModelSerializer):
     delivery_agent_name = serializers.CharField(source="delivery_agent.full_name", read_only=True, allow_null=True)
     class Meta:
         model = Order
-        fields = ["id", "order_number", "shop_name", "customer_name", "customer_phone", "address_line", "area_name", "subtotal", "delivery_fee", "total", "payment_method", "payment_status", "status", "delivery_agent", "delivery_agent_name", "created_at", "items", "history"]
+        fields = ["id", "order_number", "shop_name", "customer_name", "customer_phone", "address_line", "area_name", "subtotal", "delivery_fee", "total", "payment_method", "payment_status", "status", "delivery_agent", "delivery_agent_name", "created_at", "items", "history", "has_review"]
+
+    def get_has_review(self, obj):
+        try:
+            obj.review
+        except Review.DoesNotExist:
+            return False
+        return True
 
 class OrderHistorySerializer(serializers.ModelSerializer):
     status_label = serializers.CharField(source="get_status_display", read_only=True)
@@ -150,10 +158,22 @@ class OrderTrackingSerializer(serializers.ModelSerializer):
         } if request and request.user.is_authenticated and request.user.id == obj.customer_id else None
 
 class ReviewSerializer(serializers.ModelSerializer):
-    class Meta: model = Review; fields = ["id", "order", "rating", "comment", "created_at"]
+    class Meta:
+        model = Review
+        fields = ["id", "order", "rating", "comment", "created_at"]
+        read_only_fields = ["id", "created_at"]
+
+    def validate_order(self, order):
+        user = self.context["request"].user
+        if order.customer_id != user.id:
+            raise serializers.ValidationError("You can only review your own orders.")
+        if order.status != Order.Status.DELIVERED:
+            raise serializers.ValidationError("Only delivered orders can be reviewed.")
+        if Review.objects.filter(order=order).exists():
+            raise serializers.ValidationError("This order has already been reviewed.")
+        return order
+
     def create(self, validated):
         order = validated["order"]
         user = self.context["request"].user
-        if order.customer_id != user.id or order.status != Order.Status.DELIVERED:
-            raise serializers.ValidationError("Only the customer of a delivered order can review it.")
         return Review.objects.create(customer=user, shop=order.shop, **validated)

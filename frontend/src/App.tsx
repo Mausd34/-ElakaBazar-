@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import axios from 'axios'
-import { Link, Route, Routes, useNavigate } from 'react-router-dom'
+import { Link, Route, Routes, useNavigate, useSearchParams } from 'react-router-dom'
 import { ShoppingBasket, MapPin, Search, UserRound, ShoppingCart, Menu, Plus, Minus, Trash2, Store, Package, LogOut } from 'lucide-react'
 import { api, login } from './api'
 import RegisterPage from './pages/RegisterPage'
@@ -10,6 +10,7 @@ import ShopkeeperInventoryPage from './pages/ShopkeeperInventoryPage'
 import DeliveryAgentPage from './pages/DeliveryAgentPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
 import ShopkeeperApplicationPage from './pages/ShopkeeperApplicationPage'
+import LocationPage from './pages/LocationPage'
 
 type Shop = { id:number; name:string; area_name:string; address:string; delivery_fee:string; minimum_order:string }
 type Product = { id:number; shop:number; shop_name:string; product:number; product_name:string; product_name_bn:string; unit:string; image_url:string; category_name:string; price:string; stock:string }
@@ -38,7 +39,9 @@ function App() {
   const [busy,setBusy] = useState(false)
   const [notice,setNotice] = useState('')
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const areaId = areas.find(a=>a.name===area)?.id
+  const requestedAreaId = searchParams.get('area')
   const categoryImages = {
     'শাকসবজি': 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=900&q=80',
     'ডিম ও দুধ': 'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=900&q=80',
@@ -59,6 +62,10 @@ function App() {
     try { const r=await api.get('/cart/'); setCart(r.data) } catch {}
   }
   useEffect(()=>{load(); refreshCart()},[])
+  useEffect(()=>{
+    const requestedArea=areas.find(a=>String(a.id)===requestedAreaId)
+    if(requestedArea) setArea(requestedArea.name)
+  },[areas,requestedAreaId])
   useEffect(()=>{
     if (!areaId) return
     api.get('/shops/',{params:{area:areaId}}).then(r=>setShops(r.data.results||r.data)).catch(()=>{})
@@ -81,7 +88,7 @@ function App() {
       <Link to="/" className="brand"><span className="brand-icon"><ShoppingBasket size={24}/></span><span>Elaka<span>Bazar</span><small>Neighborhood grocery</small></span></Link>
       <label className="location"><MapPin size={17}/><select value={area} onChange={e=>setArea(e.target.value)}>{areas.map(a=><option key={a.id}>{a.name}</option>)}</select></label>
       <div className="searchbox"><Search size={19}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search products or stores..."/></div>
-      <nav><Link to="/shops">দোকান</Link><Link to="/orders">অর্ডার</Link><Link to="/shopkeeper">দোকানদার</Link><Link to="/shopkeeper/inventory">ইনভেন্টরি</Link><Link to="/shopkeeper/apply">দোকান আবেদন</Link><Link to="/delivery">ডেলিভারি</Link><Link to="/admin">অ্যাডমিন</Link></nav>
+      <nav><Link to="/shops">দোকান</Link><Link to="/locations">এলাকা</Link><Link to="/orders">অর্ডার</Link><Link to="/shopkeeper">দোকানদার</Link><Link to="/shopkeeper/inventory">ইনভেন্টরি</Link><Link to="/shopkeeper/apply">দোকান আবেদন</Link><Link to="/delivery">ডেলিভারি</Link><Link to="/admin">অ্যাডমিন</Link></nav>
       <Link to="/track-order" className="icon-link"><Package size={18}/><span>Track order</span></Link>
       <Link to="/account" className="icon-link"><UserRound size={19}/><span>অ্যাকাউন্ট</span></Link>
       <Link to="/cart" className="cart-link"><ShoppingCart size={19}/><span>Cart</span><b>{count}</b></Link>
@@ -136,6 +143,7 @@ function App() {
         </section>
       </main>}/>
       <Route path="/shops" element={<main className="page"><h1>আপনার এলাকার দোকান</h1><div className="shop-grid">{shops.map(s=><div className="shop-card" key={s.id}><div className="shop-avatar"><Store/></div><div><h3>{s.name}</h3><p>{s.area_name} · {s.address}</p></div></div>)}</div></main>}/>
+      <Route path="/locations" element={<LocationPage/>}/>
       <Route path="/track-order" element={<OrderTrackingPage/>}/>
       <Route path="/admin/orders" element={<AdminOrdersPage/>}/>
       <Route path="/register" element={<RegisterPage onRegistered={async(username,password)=>{await login(username,password);await refreshCart();navigate("/account")}}/>}/>
@@ -145,7 +153,7 @@ function App() {
       <Route path="/shopkeeper/apply" element={<ShopkeeperApplicationPage/>}/>
       <Route path="/delivery" element={<DeliveryAgentPage/>}/>
       <Route path="/admin" element={<AdminDashboardPage/>}/>
-      <Route path="/login" element={<Login onLogin={async(u)=>{await login(u.username,u.password);await refreshCart();const profile=await api.get('/auth/me/');navigate(profile.data.role==='SHOPKEEPER'?'/shopkeeper':'/')}}/>}/>
+      <Route path="/login" element={<Login onLogin={async(u)=>{await login(u.username,u.password);await refreshCart();const profile=await api.get('/auth/me/');const destinations:{[role:string]:string}={SHOPKEEPER:'/shopkeeper',DELIVERY_AGENT:'/delivery',ADMIN:'/admin'};navigate(destinations[profile.data.role]||'/')}}/>}/>
       <Route path="/cart" element={<CartPage cart={cart} refresh={refreshCart} clear={clearCart}/>}/>
       <Route path="/shopkeeper" element={<ShopkeeperPage/>}/>
       <Route path="*" element={<main className="page"><h1>পৃষ্ঠা পাওয়া যায়নি</h1><Link to="/">হোমে ফিরুন</Link></main>}/>

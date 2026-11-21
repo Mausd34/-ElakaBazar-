@@ -18,7 +18,7 @@ export default function AdminDashboardPage() {
   const [busy,setBusy] = useState('')
   async function load() {
     try {
-      const [s,sh,o,a,c] = await Promise.all([api.get('/admin/overview/'),api.get('/admin/shops/'),api.get('/admin/orders/'),api.get('/admin/delivery-agents/'),api.get('/categories/')])
+      const [s,sh,o,a,c] = await Promise.all([api.get('/admin/overview/'),api.get('/admin/shops/'),api.get('/admin/orders/list/'),api.get('/admin/delivery-agents/'),api.get('/categories/')])
       setStats(s.data); setShops(sh.data.results||sh.data); setOrders(o.data.results||o.data); setAgents(a.data.results||a.data); setCategories(c.data.results||c.data)
       if (!product.category && (c.data.results||c.data).length) setProduct(p=>({...p,category:String((c.data.results||c.data)[0].id)}))
       setError('')

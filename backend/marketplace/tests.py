@@ -192,6 +192,32 @@ class CoreMarketplaceAPITests(TestCase):
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["history"][0]["status"], Order.Status.PLACED)
         self.assertEqual(rows[0]["address_line"], "House 1, Tongi")
+        self.assertFalse(rows[0]["has_review"])
+
+    def test_customer_can_review_delivered_order_only_once(self):
+        self.order.status = Order.Status.DELIVERED
+        self.order.save(update_fields=["status"])
+        self.client.force_authenticate(self.customer)
+        payload = {"order": str(self.order.id), "rating": 5, "comment": "Great service"}
+
+        response = self.client.post("/api/v1/reviews/", payload, format="json")
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertTrue(Order.objects.get(pk=self.order.id).review)
+
+        duplicate = self.client.post("/api/v1/reviews/", payload, format="json")
+        self.assertEqual(duplicate.status_code, 400)
+        self.assertTrue(self.client.get("/api/v1/orders/").data["results"][0]["has_review"])
+
+    def test_customer_cannot_review_undelivered_or_another_customers_order(self):
+        self.client.force_authenticate(self.customer)
+        response = self.client.post("/api/v1/reviews/", {"order": str(self.order.id), "rating": 5}, format="json")
+        self.assertEqual(response.status_code, 400)
+
+        self.order.status = Order.Status.DELIVERED
+        self.order.save(update_fields=["status"])
+        self.client.force_authenticate(self.other_customer)
+        response = self.client.post("/api/v1/reviews/", {"order": str(self.order.id), "rating": 5}, format="json")
+        self.assertEqual(response.status_code, 400)
 
     def test_customer_cannot_read_another_customers_order(self):
         self.client.force_authenticate(self.other_customer)
@@ -291,6 +317,22 @@ class AdminAndDeliveryWorkflowTests(TestCase):
         self.assertEqual(product.status_code, 201, product.data)
         self.assertEqual(agents.status_code, 200)
         self.assertEqual(len(agents.data["results"]), 1)
+
+    def test_admin_dashboard_orders_include_agent_assignment_fields(self):
+        order = Order.objects.create(
+            customer=self.customer, shop=self.shop, address=self.address,
+            delivery_agent=self.agent, subtotal=Decimal("100"),
+            delivery_fee=Decimal("20"), total=Decimal("120"),
+        )
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.get("/api/v1/admin/orders/list/")
+
+        self.assertEqual(response.status_code, 200)
+        row = response.data["results"][0]
+        self.assertEqual(row["id"], str(order.id))
+        self.assertEqual(row["delivery_agent"], self.agent.id)
+        self.assertEqual(row["delivery_agent_name"], self.agent.full_name)
 
     def test_delivery_agent_can_pick_up_and_complete_assigned_order(self):
         order = Order.objects.create(

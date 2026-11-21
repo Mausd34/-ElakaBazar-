@@ -56,7 +56,8 @@ Base: `/api/v1/`
 
 - `GET /orders/` — current customer's order history
 - `GET /orders/<uuid>/` — details for one of the current customer's orders
-- Order responses include saved line items, delivery address summary and status history.
+- Order responses include saved line items, delivery address summary, status history and a `has_review` flag.
+- `POST /reviews/` — submit a 1–5 rating and comment for your own delivered order; each order can be reviewed once.
 
 ## Shopkeeper workspace
 
@@ -77,6 +78,7 @@ Shop ownership is checked on inventory writes. A shopkeeper cannot manage anothe
 - `GET /admin/shops/?status=PENDING` — list shops for review (staff only)
 - `POST /admin/shops/<id>/<approve|reject|suspend>/` — moderate a shop (staff only)
 - `GET /admin/orders/` — list all orders (staff only)
+- `GET /admin/orders/list/` — list orders with delivery-agent assignment fields for the admin dashboard
 - `GET /admin/delivery-agents/` — list active delivery agents (staff only)
 - `POST /admin/products/` — add a product to the master catalogue (staff only; category must already exist)
 - `POST /admin/orders/<uuid>/assign/` — assign a delivery agent (staff only)

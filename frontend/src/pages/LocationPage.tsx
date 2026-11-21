@@ -1,129 +1,43 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 
+type Area = { id: number; name: string; district: string }
+
 export default function LocationPage() {
-  const [cities, setCities] = useState<Array<{ id: number; name: string }>>([])
-  const [districts, setDistricts] = useState<Array<{ id: number; name: string; city: number }>>([])
-  const [areas, setAreas] = useState<Array<{ id: number; name: string; district: number }>>([])
-
-  const [cityId, setCityId] = useState<number | ''>('')
-  const [districtId, setDistrictId] = useState<number | ''>('')
-  const [areaId, setAreaId] = useState<number | ''>('')
-
+  const [areas, setAreas] = useState<Area[]>([])
+  const [district, setDistrict] = useState('')
+  const [areaId, setAreaId] = useState('')
+  const [error, setError] = useState('')
   const navigate = useNavigate()
 
-  // Load all locations (demo endpoint returns flat list, adapt as needed)
   useEffect(() => {
-    async function load() {
-      try {
-        const res = await api.get('/locations/')
-        const data = res.data.results || res.data
-        // Expect objects: {id, name, city, district}
-        const cityList = Array.from(new Set(data.map((l: any) => l.city))).map((c: any) => ({ id: c, name: `City ${c}` }))
-        setCities(cityList)
-        setDistricts(data.map((l: any) => ({ id: l.district, name: `District ${l.district}`, city: l.city })))
-        setAreas(data.map((l: any) => ({ id: l.id, name: l.name, district: l.district })))
-      } catch {
-        // fallback static demo data
-        const demoCities = [{ id: 1, name: 'ঢাকা' }, { id: 2, name: 'চট্টগ্রাম' }]
-        const demoDistricts = [
-          { id: 1, name: 'ঢাকা জেলা', city: 1 },
-          { id: 2, name: 'গাজীপুর জেলা', city: 1 },
-          { id: 3, name: 'কক্সবাজার জেলা', city: 2 },
-        ]
-        const demoAreas = [
-          { id: 1, name: 'টঙ্গি', district: 2 },
-          { id: 2, name: 'উটপল্লী', district: 2 },
-          { id: 3, name: 'উত্তরা', district: 1 },
-        ]
-        setCities(demoCities)
-        setDistricts(demoDistricts)
-        setAreas(demoAreas)
-      }
-    }
-    load()
+    api.get('/areas/')
+      .then(response => setAreas(response.data.results || response.data))
+      .catch(() => setError('এলাকার তালিকা লোড করা যায়নি। আবার চেষ্টা করুন।'))
   }, [])
 
-  // Filter dependent lists
-  const filteredDistricts = districtId ? [] : districts.filter(d => !cityId || d.city === cityId)
-  const filteredAreas = areaId ? [] : areas.filter(a => !districtId || a.district === districtId)
+  const districts = [...new Set(areas.map(area => area.district))].sort()
+  const filteredAreas = areas.filter(area => !district || area.district === district)
 
-  function submit(e: React.FormEvent) {
-    e.preventDefault()
-    if (areaId) {
-      navigate(`/shops?area=${areaId}`)
-    }
+  function submit(event: FormEvent) {
+    event.preventDefault()
+    if (areaId) navigate(`/?area=${encodeURIComponent(areaId)}#products`)
   }
 
-  return (
-    <main className="page mx-auto max-w-4xl p-4">
-      <h1 className="text-2xl font-bold mb-4">আপনার অবস্থান নির্বাচন করুন</h1>
-      <form onSubmit={submit} className="space-y-4">
-        <label className="block">
-          <span className="text-gray-700">শহর</span>
-          <select
-            className="mt-1 block w-full rounded border-gray-300"
-            value={cityId}
-            onChange={e => {
-              const val = Number(e.target.value) || ''
-              setCityId(val)
-              setDistrictId('')
-              setAreaId('')
-            }}
-          >
-            <option value="">শহর নির্বাচন করুন</option>
-            {cities.map(c => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="block">
-          <span className="text-gray-700">জেলা</span>
-          <select
-            className="mt-1 block w-full rounded border-gray-300"
-            value={districtId}
-            disabled={!cityId}
-            onChange={e => {
-              const val = Number(e.target.value) || ''
-              setDistrictId(val)
-              setAreaId('')
-            }}
-          >
-            <option value="">জেলা নির্বাচন করুন</option>
-            {districts
-              .filter(d => !cityId || d.city === cityId)
-              .map(d => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-          </select>
-        </label>
-        <label className="block">
-          <span className="text-gray-700">এলাকা</span>
-          <select
-            className="mt-1 block w-full rounded border-gray-300"
-            value={areaId}
-            disabled={!districtId}
-            onChange={e => setAreaId(Number(e.target.value) || '')}
-          >
-            <option value="">এলাকা নির্বাচন করুন</option>
-            {areas
-              .filter(a => !districtId || a.district === districtId)
-              .map(a => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
-          </select>
-        </label>
-        <button type="submit" className="primary-btn">
-          শপগুলো দেখুন
-        </button>
-      </form>
-    </main>
-  )
+  return <main className="page">
+    <div className="page-heading"><div><span className="eyebrow">DELIVERY LOCATION</span><h1>আপনার এলাকা নির্বাচন করুন</h1></div></div>
+    {error && <div className="notice" role="alert">{error}</div>}
+    <form className="location-form" onSubmit={submit}>
+      <label>জেলা<select required value={district} onChange={event => { setDistrict(event.target.value); setAreaId('') }}>
+        <option value="">জেলা নির্বাচন করুন</option>
+        {districts.map(name => <option key={name} value={name}>{name}</option>)}
+      </select></label>
+      <label>এলাকা<select required value={areaId} onChange={event => setAreaId(event.target.value)} disabled={!district}>
+        <option value="">এলাকা নির্বাচন করুন</option>
+        {filteredAreas.map(area => <option key={area.id} value={area.id}>{area.name}</option>)}
+      </select></label>
+      <button className="primary-btn" disabled={!areas.length || !areaId}>এই এলাকায় বাজার দেখুন</button>
+    </form>
+  </main>
 }
