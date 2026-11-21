@@ -1,0 +1,30 @@
+<svg width="375" height="812" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <rect x="0" y="0" width="375" height="50" fill="#3b82f6"/>
+  <text x="187" y="33" font-family="Arial, sans-serif" font-size="18" fill="white" text-anchor="middle" font-weight="bold">Shop Dashboard</text>
+  <rect x="20" y="70" width="335" height="120" fill="#f9fafb" rx="8"/>
+  <text x="40" y="95" font-family="Arial, sans-serif" font-size="14" fill="#374151" font-weight="bold">Green Mart</text>
+  <text x="40" y="115" font-family="Arial, sans-serif" font-size="12" fill="#6b7280">Status: Open • 4.8 ★</text>
+  <text x="40" y="135" font-family="Arial, sans-serif" font-size="12" fill="#374151">Today: ৳5,200 • 15 orders</text>
+  <rect x="20" y="210" width="335" height="450" fill="#f9fafb" rx="8"/>
+  <text x="40" y="235" font-family="Arial, sans-serif" font-size="16" fill="#1f2937" font-weight="bold">Orders</text>
+  <rect x="40" y="255" width="295" height="80" fill="#ffffff" rx="8" stroke="#e5e7eb"/>
+  <rect x="50" y="265" width="100" height="60" fill="#e5e7eb" rx="4"/>
+  <text x="130" y="295" font-family="Arial, sans-serif" font-size="14" fill="#374151">Order #ELK-A1B2</text>
+  <text x="130" y="315" font-family="Arial, sans-serif" font-size="12" fill="#6b7280">2 items • ৳450</text>
+  <text x="290" y="290" font-family="Arial, sans-serif" font-size="12" fill="#10b981" font-weight="bold">New</text>
+  <rect x="40" y="355" width="295" height="80" fill="#ffffff" rx="8" stroke="#e5e7eb"/>
+  <rect x="50" y="365" width="100" height="60" fill="#e5e7eb" rx="4"/>
+  <text x="130" y="395" font-family="Arial, sans-serif" font-size="14" fill="#374151">Order #ELK-D4E5</text>
+  <text x="130" y="415" font-family="Arial, sans-serif" font-size="12" fill="#6b7280">1 item • ৳320</text>
+  <text x="290" y="390" font-family="Arial, sans-serif" font-size="12" fill="#f59e0b" font-weight="bold">Preparing</text>
+  <rect x="40" y="455" width="295" height="80" fill="#ffffff" rx="8" stroke="#e5e7eb"/>
+  <rect x="50" y="465" width="100" height="60" fill="#e5e7eb" rx="4"/>
+  <text x="130" y="495" font-family="Arial, sans-serif" font-size="14" fill="#374151">Order #ELK-G7H8</text>
+  <text x="130" y="515" font-family="Arial, sans-serif" font-size="12" fill="#6b7280">3 items • ৳680</text>
+  <text x="290" y="490" font-family="Arial, sans-serif" font-size="12" fill="#3b82f6" font-weight="bold">Ready</text>
+  <rect x="20" y="680" width="335" height="110" fill="#ffffff" rx="8" stroke="#e5e7eb"/>
+  <text x="40" y="705" font-family="Arial, sans-serif" font-size="16" fill="#1f2937" font-weight="bold">Products</text>
+  <rect x="40" y="720" width="110" height="50" fill="#10b981" rx="6"/>
+  <text x="95" y="742" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">+ Add Product</text>
+</svg>

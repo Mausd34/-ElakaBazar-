@@ -1,0 +1,17 @@
+.gitignore
+README.md
+backend/config/__pycache__/settings.cpython-314.pyc
+backend/marketplace/__pycache__/admin.cpython-314.pyc
+backend/marketplace/__pycache__/models.cpython-314.pyc
+backend/marketplace/__pycache__/serializers.cpython-314.pyc
+backend/marketplace/__pycache__/urls.cpython-314.pyc
+backend/marketplace/__pycache__/views.cpython-314.pyc
+backend/marketplace/management/commands/__pycache__/seed_demo.cpython-314.pyc
+backend/marketplace/serializers.py
+backend/marketplace/tests.py
+backend/marketplace/urls.py
+backend/marketplace/views.py
+docs/API.md
+docs/screenshots/homepage.png
+frontend/src/App.tsx
+frontend/src/styles.css

@@ -1,0 +1,36 @@
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <rect x="0" y="0" width="200" height="600" fill="#1f2937"/>
+  <text x="100" y="50" font-family="Arial, sans-serif" font-size="18" fill="white" text-anchor="middle" font-weight="bold">ElakaBazar Admin</text>
+  <rect x="20" y="90" width="160" height="40" fill="#3b82f6" rx="6"/>
+  <text x="100" y="113" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle">Dashboard</text>
+  <rect x="20" y="150" width="160" height="40" fill="#374151" rx="6"/>
+  <text x="100" y="173" font-family="Arial, sans-serif" font-size="12" fill="#d1d5db" text-anchor="middle">Users</text>
+  <rect x="20" y="210" width="160" height="40" fill="#374151" rx="6"/>
+  <text x="100" y="233" font-family="Arial, sans-serif" font-size="12" fill="#d1d5db" text-anchor="middle">Shops</text>
+  <rect x="20" y="270" width="160" height="40" fill="#374151" rx="6"/>
+  <text x="100" y="293" font-family="Arial, sans-serif" font-size="12" fill="#d1d5db" text-anchor="middle">Orders</text>
+  <rect x="20" y="330" width="160" height="40" fill="#374151" rx="6"/>
+  <text x="100" y="353" font-family="Arial, sans-serif" font-size="12" fill="#d1d5db" text-anchor="middle">Delivery</text>
+  <rect x="220" y="30" width="580" height="540" fill="#f3f4f6"/>
+  <text x="250" y="60" font-family="Arial, sans-serif" font-size="20" fill="#1f2937" font-weight="bold">Dashboard Overview</text>
+  <rect x="250" y="100" width="170" height="100" fill="#ffffff" rx="8" stroke="#e5e7eb"/>
+  <text x="270" y="125" font-family="Arial, sans-serif" font-size="12" fill="#6b7280">Total Users</text>
+  <text x="270" y="150" font-family="Arial, sans-serif" font-size="24" fill="#1f2937" font-weight="bold">1,234</text>
+  <rect x="440" y="100" width="170" height="100" fill="#ffffff" rx="8" stroke="#e5e7eb"/>
+  <text x="460" y="125" font-family="Arial, sans-serif" font-size="12" fill="#6b7280">Total Shops</text>
+  <text x="460" y="150" font-family="Arial, sans-serif" font-size="24" fill="#1f2937" font-weight="bold">89</text>
+  <rect x="630" y="100" width="170" height="100" fill="#ffffff" rx="8" stroke="#e5e7eb"/>
+  <text x="650" y="125" font-family="Arial, sans-serif" font-size="12" fill="#6b7280">Total Orders</text>
+  <text x="650" y="150" font-family="Arial, sans-serif" font-size="24" fill="#1f2937" font-weight="bold">2,456</text>
+  <rect x="250" y="220" width="550" height="300" fill="#ffffff" rx="8" stroke="#e5e7eb"/>
+  <text x="280" y="245" font-family="Arial, sans-serif" font-size="16" fill="#1f2937" font-weight="bold">Recent Orders</text>
+  <rect x="270" y="270" width="510" height="40" fill="#f9fafb" rx="6"/>
+  <text x="285" y="290" font-family="Arial, sans-serif" font-size="13" fill="#374151">Order #ELK-A1B2 • Green Mart • ৳450 • Delivered</text>
+  <rect x="270" y="320" width="510" height="40" fill="#ffffff" rx="6"/>
+  <text x="285" y="340" font-family="Arial, sans-serif" font-size="13" fill="#374151">Order #ELK-D4E5 • Fresh Basket • ৳320 • Preparing</text>
+  <rect x="270" y="370" width="510" height="40" fill="#f9fafb" rx="6"/>
+  <text x="285" y="390" font-family="Arial, sans-serif" font-size="13" fill="#374151">Order #ELK-G7H8 • Dhaka Dairy • ৳680 • Ready</text>
+  <rect x="270" y="420" width="510" height="40" fill="#ffffff" rx="6"/>
+  <text x="285" y="440" font-family="Arial, sans-serif" font-size="13" fill="#374151">Order #ELK-J1K2 • Green Mart • ৳290 • Out for Delivery</text>
+</svg>
