@@ -388,6 +388,12 @@ class CheckoutPaymentTests(TestCase):
             payload["email"] = "buyer@example.com"
         return self.client.post("/api/v1/checkout/", payload, format="json")
 
+    def test_cart_includes_shop_delivery_area(self):
+        response = self.client.get("/api/v1/cart/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["shop_area_name"], "Tongi")
+
     def test_cod_checkout_keeps_existing_behavior(self):
         response = self.checkout()
 
@@ -397,6 +403,19 @@ class CheckoutPaymentTests(TestCase):
         self.assertIsNone(order.payment_transaction_id)
         self.assertEqual(self.listing.__class__.objects.get(pk=self.listing.pk).stock, Decimal("18.000"))
         self.assertFalse(CartItem.objects.filter(cart=self.cart).exists())
+
+    def test_checkout_rejects_an_address_outside_the_shop_delivery_area(self):
+        other_area = Area.objects.create(name="Banani", district="Dhaka")
+        other_address = Address.objects.create(
+            user=self.customer, area=other_area, address_line="Road 1, Banani", phone="01700000901",
+        )
+
+        response = self.client.post("/api/v1/checkout/", {"address":other_address.id}, format="json")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["detail"], "This shop does not currently serve the selected area.")
+        self.assertEqual(ShopProduct.objects.get(pk=self.listing.pk).stock, Decimal("20.000"))
+        self.assertTrue(CartItem.objects.filter(pk=self.cart_item.pk).exists())
 
     def test_wallet_checkout_starts_hosted_mobile_banking_session(self):
         with patch("marketplace.views.initiate_payment", return_value="https://sandbox.sslcommerz.com/test-session") as initiate:

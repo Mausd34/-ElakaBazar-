@@ -45,7 +45,7 @@ Base: `/api/v1/`
 
 ## Cart and checkout
 
-- `GET /cart/` — current user's cart
+- `GET /cart/` — current user's cart, including the shop's delivery area when set
 - `POST /cart/` — add a shop product (`shop_product`, `quantity`)
 - `DELETE /cart/` — clear cart
 - `PATCH /cart/items/<id>/` — update cart quantity

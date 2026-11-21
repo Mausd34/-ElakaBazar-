@@ -91,7 +91,10 @@ class CartItemSerializer(serializers.ModelSerializer):
 class CartSerializer(serializers.ModelSerializer):
     items = CartItemSerializer(many=True, read_only=True)
     shop_name = serializers.CharField(source="shop.name", read_only=True)
-    class Meta: model = Cart; fields = ["id", "shop", "shop_name", "items"]
+    shop_area_name = serializers.SerializerMethodField()
+    class Meta: model = Cart; fields = ["id", "shop", "shop_name", "shop_area_name", "items"]
+    def get_shop_area_name(self, obj):
+        return obj.shop.area.name if obj.shop_id else ""
 
 class OrderItemSerializer(serializers.ModelSerializer):
     class Meta: model = OrderItem; fields = ["product_name", "unit", "quantity", "unit_price", "line_total"]

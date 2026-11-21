@@ -12,6 +12,11 @@
 .payment-email input{padding:10px;border:1px solid #dfe7df;border-radius:8px}
 .payment-result{background:white;border:1px solid #e9eee8;border-radius:15px;padding:30px}
 .payment-result h1{font-size:24px;color:#163b28}
+.primary-btn:disabled,.primary-btn:disabled:hover{background:#94a3b8;box-shadow:none;cursor:not-allowed}
+.checkout-hint{display:block;color:#9a5c00;margin:4px 0 10px}
+.address-select-row{display:flex;align-items:center;gap:8px}
+.address-select-row select{flex:1;min-width:0}
+.address-select-row button{border:0;background:transparent;white-space:nowrap;cursor:pointer}
 
 .shopkeeper-page{max-width:1160px;margin:42px auto 70px}
 .shopkeeper-heading,.dashboard-section-title,.managed-order-heading,.managed-order-footer{display:flex;align-items:center;justify-content:space-between;gap:16px}
