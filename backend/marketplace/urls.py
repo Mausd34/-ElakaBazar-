@@ -20,6 +20,7 @@ from .views import (
     ReviewCreate,
     AdminOverview, AdminShopList, AdminShopAction,
     AdminOrders, AdminDeliveryAgents, AdminProductCreate,
+    SSLCommerzReturn, SSLCommerzIPN,
 )
 
 router = DefaultRouter()
@@ -48,6 +49,10 @@ urlpatterns = [
     path("cart/", CartView.as_view()),
     path("cart/items/<int:pk>/", CartItemDetail.as_view()),
     path("checkout/", CheckoutView.as_view()),
+    path("payments/sslcommerz/success/", SSLCommerzReturn.as_view(), {"result":"success"}),
+    path("payments/sslcommerz/fail/", SSLCommerzReturn.as_view(), {"result":"fail"}),
+    path("payments/sslcommerz/cancel/", SSLCommerzReturn.as_view(), {"result":"cancel"}),
+    path("payments/sslcommerz/ipn/", SSLCommerzIPN.as_view()),
 
     path("orders/", OrderList.as_view()),
     path("orders/<uuid:pk>/", OrderDetail.as_view()),

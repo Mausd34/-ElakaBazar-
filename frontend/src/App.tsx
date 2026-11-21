@@ -145,6 +145,7 @@ function App() {
       <Route path="/shops" element={<main className="page"><h1>আপনার এলাকার দোকান</h1><div className="shop-grid">{shops.map(s=><div className="shop-card" key={s.id}><div className="shop-avatar"><Store/></div><div><h3>{s.name}</h3><p>{s.area_name} · {s.address}</p></div></div>)}</div></main>}/>
       <Route path="/locations" element={<LocationPage/>}/>
       <Route path="/track-order" element={<OrderTrackingPage/>}/>
+      <Route path="/payment-result" element={<PaymentResultPage/>}/>
       <Route path="/admin/orders" element={<AdminOrdersPage/>}/>
       <Route path="/register" element={<RegisterPage onRegistered={async(username,password)=>{await login(username,password);await refreshCart();navigate("/account")}}/>}/>
       <Route path="/account" element={<AccountPage/>}/>
@@ -308,17 +309,80 @@ function Login({onLogin}:{onLogin:(u:{username:string;password:string})=>void}) 
  return <main className="auth-wrap"><form className="auth-card" onSubmit={async e=>{e.preventDefault();try{await onLogin({username,password})}catch{setError('লগইন হয়নি। ফোন নম্বর ও পাসওয়ার্ড যাচাই করুন।')}}}><span className="eyebrow">WELCOME BACK</span><h1>আপনার অ্যাকাউন্টে লগইন</h1><label>ফোন নম্বর / ইউজারনেম<input required value={username} onChange={e=>setUsername(e.target.value)} placeholder="017XXXXXXXX"/></label><label>পাসওয়ার্ড<input required type="password" value={password} onChange={e=>setPassword(e.target.value)}/></label>{error&&<p className="error">{error}</p>}<button className="primary-btn full">লগইন করুন</button><p className="muted">নতুন ব্যবহারকারী? <Link className="text-link" to="/register">অ্যাকাউন্ট তৈরি করুন</Link></p></form></main>
 }
 function CartPage({cart,refresh,clear}:{cart:Cart|null;refresh:()=>void;clear:()=>void}) {
- const [addresses,setAddresses]=useState<any[]>([]); const [areas,setAreas]=useState<any[]>([]); const [address,setAddress]=useState(''); const [message,setMessage]=useState('')
- const [area,setArea]=useState(''); const [line,setLine]=useState(''); const [phone,setPhone]=useState('')
+ const [addresses,setAddresses]=useState<any[]>([])
+ const [areas,setAreas]=useState<any[]>([])
+ const [address,setAddress]=useState('')
+ const [message,setMessage]=useState('')
+ const [area,setArea]=useState('')
+ const [line,setLine]=useState('')
+ const [phone,setPhone]=useState('')
+ const [email,setEmail]=useState('')
+ const [paymentMethod,setPaymentMethod]=useState<'COD'|'SSLCOMMERZ'>('COD')
+ const [checkoutBusy,setCheckoutBusy]=useState(false)
  async function loadAddresses(){const r=await api.get('/addresses/');setAddresses(r.data.results||r.data)}
  useEffect(()=>{
-   if(localStorage.getItem('access')) loadAddresses().catch((e:any)=>setMessage(e.response?.status===401?'সেশন শেষ হয়েছে। আবার লগইন করুন।':'ঠিকানা লোড করা যায়নি। আবার চেষ্টা করুন।'))
+   if(localStorage.getItem('access')) loadAddresses().catch((e:unknown)=>setMessage(axiosStatus(e)===401?'সেশন শেষ হয়েছে। আবার লগইন করুন।':'ঠিকানা লোড করা যায়নি। আবার চেষ্টা করুন।'))
    api.get('/areas/').then(r=>setAreas(r.data.results||r.data)).catch(()=>{})
  },[])
  const subtotal=cart?.items.reduce((s,i)=>s+Number(i.price)*Number(i.quantity),0)||0
- async function addAddress(e:FormEvent){e.preventDefault();try{const r=await api.post('/addresses/',{area,address_line:line,phone,is_default:addresses.length===0});await loadAddresses();setAddress(String(r.data.id));setLine('');setMessage('ঠিকানা সংরক্ষণ হয়েছে।')}catch(e:any){setMessage(e.response?.data?.detail||'ঠিকানা সংরক্ষণ করা যায়নি।')}}
- async function checkout(){try{const r=await api.post('/checkout/',{address});setMessage(`অর্ডার সফল! Order ID: ${r.data.order_number}`);await refresh()}catch(e:any){setMessage(e.response?.data?.detail||'অর্ডার করা যায়নি।')}}
- return <main className="page"><h1>আপনার শপিং কার্ট</h1>{!cart?.items.length?<div className="empty"><ShoppingCart size={36}/><h3>আপনার কার্ট খালি</h3><p>পছন্দের পণ্য যোগ করে বাজার শুরু করুন।</p><Link className="primary-btn" to="/">পণ্য দেখুন</Link></div>:<div className="cart-layout"><div className="cart-list"><div className="cart-title"><b>{cart.shop_name}</b><button className="text-link" onClick={clear}>কার্ট খালি করুন</button></div>{cart.items.map(i=><div className="cart-row" key={i.id}><div className="cart-thumb">🛒</div><div className="cart-product"><b>{i.product_name_bn||i.product_name}</b><small>৳{i.price} / {i.unit}</small></div><b>৳{(Number(i.price)*Number(i.quantity)).toFixed(2)}</b><button className="remove" onClick={async()=>{await api.delete(`/cart/items/${i.id}/`);refresh()}}><Trash2 size={17}/></button></div>)}</div><aside className="summary"><h3>অর্ডার সারাংশ</h3><div><span>পণ্যের মূল্য</span><b>৳{subtotal.toFixed(2)}</b></div><label>ডেলিভারি ঠিকানা<select value={address} onChange={e=>setAddress(e.target.value)}><option value="">ঠিকানা নির্বাচন করুন</option>{addresses.map(a=><option value={a.id} key={a.id}>{a.address_line} — {a.area_name}</option>)}</select></label>{addresses.length===0&&<form onSubmit={addAddress} className="address-form"><b>নতুন ঠিকানা যোগ করুন</b><select required value={area} onChange={e=>setArea(e.target.value)}><option value="">এলাকা নির্বাচন করুন</option>{areas.map(a=><option value={a.id} key={a.id}>{a.name}</option>)}</select><input required placeholder="বাসা/রোড/এলাকার ঠিকানা" value={line} onChange={e=>setLine(e.target.value)}/><input required placeholder="মোবাইল নম্বর" value={phone} onChange={e=>setPhone(e.target.value)}/><button className="text-link">ঠিকানা সংরক্ষণ</button></form>}<div className="summary-total"><span>সাবটোটাল*</span><b>৳{subtotal.toFixed(2)}</b></div><small>*ডেলিভারি চার্জ checkout-এ সার্ভার হিসাব করবে।</small><button className="primary-btn full" disabled={!address} onClick={checkout}>Cash on Delivery দিয়ে অর্ডার</button>{message&&<p>{message}</p>}</aside></div>}</main>
+ async function addAddress(e:FormEvent){
+   e.preventDefault()
+   try{
+     const r=await api.post('/addresses/',{area,address_line:line,phone,is_default:addresses.length===0})
+     await loadAddresses();setAddress(String(r.data.id));setLine('');setMessage('ঠিকানা সংরক্ষণ হয়েছে।')
+   }catch(e:unknown){setMessage(apiErrorMessage(e,'ঠিকানা সংরক্ষণ করা যায়নি।'))}
+ }
+ async function checkout(){
+   setCheckoutBusy(true);setMessage('')
+   try{
+     const payload:{address:string;payment_method:string;email?:string}={address,payment_method:paymentMethod}
+     if(paymentMethod==='SSLCOMMERZ') payload.email=email.trim()
+     const response=await api.post('/checkout/',payload)
+     if(response.data.payment_url){window.location.assign(response.data.payment_url);return}
+     setMessage(`অর্ডার সফল! Order ID: ${response.data.order_number}`)
+     await refresh()
+   }catch(e:unknown){setMessage(apiErrorMessage(e,'অর্ডার করা যায়নি।'))}
+   finally{setCheckoutBusy(false)}
+ }
+ return <main className="page">
+   <h1>আপনার শপিং কার্ট</h1>
+   {!cart?.items.length?<div className="empty"><ShoppingCart size={36}/><h3>আপনার কার্ট খালি</h3><p>পছন্দের পণ্য যোগ করে বাজার শুরু করুন।</p><Link className="primary-btn" to="/">পণ্য দেখুন</Link></div>:
+     <div className="cart-layout">
+       <div className="cart-list">
+         <div className="cart-title"><b>{cart.shop_name}</b><button className="text-link" onClick={clear}>কার্ট খালি করুন</button></div>
+         {cart.items.map(i=><div className="cart-row" key={i.id}><div className="cart-thumb">🛒</div><div className="cart-product"><b>{i.product_name_bn||i.product_name}</b><small>৳{i.price} / {i.unit}</small></div><b>৳{(Number(i.price)*Number(i.quantity)).toFixed(2)}</b><button className="remove" onClick={async()=>{await api.delete(`/cart/items/${i.id}/`);refresh()}} aria-label="Remove item"><Trash2 size={17}/></button></div>)}
+       </div>
+       <aside className="summary">
+         <h3>অর্ডার সারাংশ</h3>
+         <div><span>পণ্যের মূল্য</span><b>৳{subtotal.toFixed(2)}</b></div>
+         <label>ডেলিভারি ঠিকানা<select value={address} onChange={e=>setAddress(e.target.value)}><option value="">ঠিকানা নির্বাচন করুন</option>{addresses.map(a=><option value={a.id} key={a.id}>{a.address_line} — {a.area_name}</option>)}</select></label>
+         {addresses.length===0&&<form onSubmit={addAddress} className="address-form"><b>নতুন ঠিকানা যোগ করুন</b><select required value={area} onChange={e=>setArea(e.target.value)}><option value="">এলাকা নির্বাচন করুন</option>{areas.map(a=><option value={a.id} key={a.id}>{a.name}</option>)}</select><input required placeholder="বাসা/রোড/এলাকার ঠিকানা" value={line} onChange={e=>setLine(e.target.value)}/><input required placeholder="মোবাইল নম্বর" value={phone} onChange={e=>setPhone(e.target.value)}/><button className="text-link">ঠিকানা সংরক্ষণ</button></form>}
+         <div className="summary-total"><span>সাবটোটাল*</span><b>৳{subtotal.toFixed(2)}</b></div>
+         <small>*ডেলিভারি চার্জ checkout-এ সার্ভার হিসাব করবে।</small>
+         <fieldset className="payment-methods">
+           <legend>পেমেন্ট পদ্ধতি</legend>
+           <label><input type="radio" name="payment-method" checked={paymentMethod==='COD'} onChange={()=>setPaymentMethod('COD')}/> ক্যাশ অন ডেলিভারি</label>
+           <label><input type="radio" name="payment-method" checked={paymentMethod==='SSLCOMMERZ'} onChange={()=>setPaymentMethod('SSLCOMMERZ')}/> মোবাইল ব্যাংকিং (bKash / Nagad / Rocket—যেগুলো চালু আছে)</label>
+           {paymentMethod==='SSLCOMMERZ'&&<><small>নিরাপদ SSLCommerz পেজে আপনার মার্চেন্ট অ্যাকাউন্টে চালু থাকা ওয়ালেট বেছে নিন।</small><label className="payment-email">রসিদের ইমেইল<input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="name@example.com"/></label></>}
+         </fieldset>
+         <button className="primary-btn full" disabled={!address||checkoutBusy||(paymentMethod==='SSLCOMMERZ'&&!email.trim())} onClick={checkout}>{checkoutBusy?'প্রসেস হচ্ছে…':paymentMethod==='COD'?'Cash on Delivery দিয়ে অর্ডার':'নিরাপদ পেমেন্টে এগিয়ে যান'}</button>
+         {message&&<p role="status">{message}</p>}
+       </aside>
+     </div>}
+ </main>
+}
+
+function PaymentResultPage(){
+ const [searchParams]=useSearchParams()
+ const status=searchParams.get('status')
+ const order=searchParams.get('order')
+ const messages:{[key:string]:string}={
+   success:'পেমেন্ট যাচাই হয়েছে। আপনার অর্ডার তৈরি হয়েছে।',
+   pending:'পেমেন্ট যাচাই চলছে। অর্ডার পাতায় স্ট্যাটাস দেখুন।',
+   fail:'পেমেন্ট সম্পন্ন হয়নি। কার্টে পণ্য আছে কি না দেখে আবার চেষ্টা করুন।',
+   cancel:'পেমেন্ট বাতিল হয়েছে। কার্টে পণ্য আছে কি না দেখে আবার চেষ্টা করুন।',
+ }
+ return <main className="page payment-result"><span className="eyebrow">PAYMENT UPDATE</span><h1>{messages[status||'']||'পেমেন্টের অবস্থা পাওয়া যায়নি।'}</h1>{order&&<p>অর্ডার নম্বর: <b>{order}</b></p>}<div className="hero-actions"><Link className="primary-btn" to="/orders">আমার অর্ডার</Link><Link className="secondary-btn" to="/cart">কার্টে ফিরুন</Link></div></main>
 }
 function ShopkeeperPage(){
  type OwnedShop = { id:number; name:string; area:number; area_name:string; address:string; phone:string; description:string; status:string; delivery_fee:string; minimum_order:string; is_open:boolean }

@@ -8,7 +8,8 @@
 6. Configure persistent media/object storage.
 7. Configure scheduled database backups and restore tests.
 8. Configure error monitoring and structured logs.
-9. Add SMS OTP provider and verified merchant payment integrations.
-10. Run migrations and automated tests before release.
+9. Configure `SSLCOMMERZ_STORE_ID` and `SSLCOMMERZ_STORE_PASSWORD` in the backend environment with `SSLCOMMERZ_SANDBOX=1`. Set `PAYMENT_CALLBACK_BASE_URL` to a publicly reachable HTTPS backend URL (and `FRONTEND_URL` to the web app). Use a secure tunnel for local callback testing. See the [official SSLCommerz API documentation](https://developer.sslcommerz.com/doc/v4/).
+10. Switch to live credentials and `SSLCOMMERZ_SANDBOX=0` only after merchant approval and successful sandbox verification. Never expose gateway credentials in frontend variables.
+11. Run migrations and automated tests before release.
 
 Do not deploy with demo passwords or development database credentials.

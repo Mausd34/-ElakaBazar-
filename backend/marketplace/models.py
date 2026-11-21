@@ -123,6 +123,7 @@ class Order(models.Model):
     total = models.DecimalField(max_digits=10, decimal_places=2)
     payment_method = models.CharField(max_length=30, default="COD")
     payment_status = models.CharField(max_length=20, choices=PaymentStatus.choices, default=PaymentStatus.PENDING)
+    payment_transaction_id = models.CharField(max_length=30, unique=True, null=True, blank=True)
     status = models.CharField(max_length=30, choices=Status.choices, default=Status.PLACED)
     tracking_number = models.CharField(max_length=64, unique=True, null=True, blank=True)
     courier_name = models.CharField(max_length=100, blank=True)

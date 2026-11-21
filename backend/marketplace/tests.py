@@ -1,8 +1,10 @@
+from unittest.mock import patch
 from decimal import Decimal
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
-from .models import Area, Address, Shop, Category, Product, ShopProduct, Order, OrderItem, OrderStatusHistory
+from .models import Area, Address, Shop, Category, Product, ShopProduct, Cart, CartItem, Order, OrderItem, OrderStatusHistory
+from .sslcommerz import PaymentGatewayError, initiate_payment
 User = get_user_model()
 
 class MarketplaceModelTests(TestCase):
@@ -350,3 +352,201 @@ class AdminAndDeliveryWorkflowTests(TestCase):
         order.refresh_from_db()
         self.assertEqual(order.status, Order.Status.DELIVERED)
         self.assertEqual(order.payment_status, Order.PaymentStatus.PAID)
+
+
+@override_settings(
+    SSLCOMMERZ_STORE_ID="sandbox-store",
+    SSLCOMMERZ_STORE_PASSWORD="sandbox-password",
+)
+class CheckoutPaymentTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.area = Area.objects.create(name="Tongi")
+        self.customer = User.objects.create_user(username="01700000901", password="StrongPass123", full_name="Test Buyer")
+        self.seller = User.objects.create_user(username="01700000902", password="StrongPass123", role=User.Role.SHOPKEEPER)
+        self.shop = Shop.objects.create(
+            owner=self.seller, area=self.area, name="Test Shop", phone="01700000902",
+            address="Tongi", status=Shop.Status.APPROVED,
+        )
+        self.address = Address.objects.create(
+            user=self.customer, area=self.area, address_line="House 1, Tongi", phone="01700000901",
+        )
+        self.category = Category.objects.create(name="Groceries")
+        self.product = Product.objects.create(category=self.category, name="Rice")
+        self.listing = ShopProduct.objects.create(
+            shop=self.shop, product=self.product, price=Decimal("75.00"), stock=Decimal("20.000"),
+        )
+        self.cart = Cart.objects.create(customer=self.customer, shop=self.shop)
+        self.cart_item = CartItem.objects.create(
+            cart=self.cart, shop_product=self.listing, quantity=Decimal("2.000"),
+        )
+        self.client.force_authenticate(self.customer)
+
+    def checkout(self, payment_method="COD"):
+        payload = {"address": self.address.id, "payment_method": payment_method}
+        if payment_method == "SSLCOMMERZ":
+            payload["email"] = "buyer@example.com"
+        return self.client.post("/api/v1/checkout/", payload, format="json")
+
+    def test_cod_checkout_keeps_existing_behavior(self):
+        response = self.checkout()
+
+        self.assertEqual(response.status_code, 201, response.data)
+        order = Order.objects.get()
+        self.assertEqual(order.payment_method, "COD")
+        self.assertIsNone(order.payment_transaction_id)
+        self.assertEqual(self.listing.__class__.objects.get(pk=self.listing.pk).stock, Decimal("18.000"))
+        self.assertFalse(CartItem.objects.filter(cart=self.cart).exists())
+
+    def test_wallet_checkout_starts_hosted_mobile_banking_session(self):
+        with patch("marketplace.views.initiate_payment", return_value="https://sandbox.sslcommerz.com/test-session") as initiate:
+            response = self.checkout("SSLCOMMERZ")
+
+        self.assertEqual(response.status_code, 201, response.data)
+        order = Order.objects.get()
+        self.assertEqual(order.payment_method, "SSLCOMMERZ")
+        self.assertEqual(order.payment_status, Order.PaymentStatus.PENDING)
+        self.assertEqual(len(order.payment_transaction_id), 30)
+        self.assertEqual(response.data["payment_url"], "https://sandbox.sslcommerz.com/test-session")
+        self.assertEqual(initiate.call_args.args[0]["multi_card_name"], "mobilebank")
+        self.assertIn("payments/sslcommerz/ipn/", initiate.call_args.args[0]["ipn_url"])
+
+    def test_gateway_failure_rolls_back_order_stock_and_cart(self):
+        with patch("marketplace.views.initiate_payment", side_effect=PaymentGatewayError("Unavailable")):
+            response = self.checkout("SSLCOMMERZ")
+
+        self.assertEqual(response.status_code, 503)
+        self.assertFalse(Order.objects.exists())
+        self.assertEqual(ShopProduct.objects.get(pk=self.listing.pk).stock, Decimal("20.000"))
+        self.assertTrue(CartItem.objects.filter(pk=self.cart_item.pk).exists())
+
+    @override_settings(SSLCOMMERZ_STORE_ID="", SSLCOMMERZ_STORE_PASSWORD="")
+    def test_online_checkout_requires_gateway_credentials(self):
+        response = self.checkout("SSLCOMMERZ")
+
+        self.assertEqual(response.status_code, 503)
+        self.assertFalse(Order.objects.exists())
+        self.assertEqual(ShopProduct.objects.get(pk=self.listing.pk).stock, Decimal("20.000"))
+        self.assertTrue(CartItem.objects.filter(pk=self.cart_item.pk).exists())
+
+    def test_gateway_rejects_redirects_outside_sslcommerz(self):
+        with patch("marketplace.sslcommerz._request_json", return_value={
+            "status":"SUCCESS", "GatewayPageURL":"https://attacker.example/pay",
+        }):
+            with self.assertRaises(PaymentGatewayError):
+                initiate_payment({"tran_id":"test"})
+
+    @override_settings(
+        SSLCOMMERZ_SANDBOX=False, DEBUG=True,
+        PAYMENT_CALLBACK_BASE_URL="https://api.example.com",
+        FRONTEND_URL="https://shop.example.com",
+    )
+    def test_live_gateway_is_disabled_in_debug_mode(self):
+        with self.assertRaises(PaymentGatewayError):
+            initiate_payment({"tran_id":"test"})
+
+    def test_validated_success_callback_marks_order_paid(self):
+        with patch("marketplace.views.initiate_payment", return_value="https://sandbox.sslcommerz.com/test-session"):
+            self.checkout("SSLCOMMERZ")
+        order = Order.objects.get()
+        validation = {
+            "status":"VALID", "tran_id":order.payment_transaction_id,
+            "amount":"180.00", "currency":"BDT", "store_id":"sandbox-store",
+        }
+
+        with patch("marketplace.views.validate_payment", return_value=validation):
+            response = self.client.post("/api/v1/payments/sslcommerz/success/", {
+                "tran_id":order.payment_transaction_id, "val_id":"validated-id",
+            }, format="json")
+
+        self.assertEqual(response.status_code, 302)
+        order.refresh_from_db()
+        self.assertEqual(order.payment_status, Order.PaymentStatus.PAID)
+        self.assertIn("status=success", response["Location"])
+
+    def test_late_cancel_callback_does_not_reverse_a_verified_payment(self):
+        with patch("marketplace.views.initiate_payment", return_value="https://sandbox.sslcommerz.com/test-session"):
+            self.checkout("SSLCOMMERZ")
+        order = Order.objects.get()
+        validation = {
+            "status":"VALID", "tran_id":order.payment_transaction_id,
+            "amount":"180.00", "currency":"BDT", "store_id":"sandbox-store",
+        }
+        with patch("marketplace.views.validate_payment", return_value=validation):
+            self.client.post("/api/v1/payments/sslcommerz/success/", {
+                "tran_id":order.payment_transaction_id, "val_id":"validated-id",
+            }, format="json")
+
+        response = self.client.post("/api/v1/payments/sslcommerz/cancel/", {
+            "tran_id":order.payment_transaction_id,
+        }, format="json")
+
+        order.refresh_from_db()
+        self.assertEqual(order.payment_status, Order.PaymentStatus.PAID)
+        self.assertEqual(ShopProduct.objects.get(pk=self.listing.pk).stock, Decimal("18.000"))
+        self.assertIn("status=success", response["Location"])
+
+    def test_unverified_ipn_does_not_mark_order_paid(self):
+        with patch("marketplace.views.initiate_payment", return_value="https://sandbox.sslcommerz.com/test-session"):
+            self.checkout("SSLCOMMERZ")
+        order = Order.objects.get()
+        validation = {
+            "status":"VALID", "tran_id":order.payment_transaction_id,
+            "amount":"1.00", "currency":"BDT", "store_id":"sandbox-store",
+        }
+
+        with patch("marketplace.views.validate_payment", return_value=validation):
+            response = self.client.post("/api/v1/payments/sslcommerz/ipn/", {
+                "tran_id":order.payment_transaction_id, "val_id":"validated-id",
+            }, format="json")
+
+        self.assertEqual(response.status_code, 400)
+        order.refresh_from_db()
+        self.assertEqual(order.payment_status, Order.PaymentStatus.PENDING)
+
+    def test_risky_ipn_does_not_mark_order_paid(self):
+        with patch("marketplace.views.initiate_payment", return_value="https://sandbox.sslcommerz.com/test-session"):
+            self.checkout("SSLCOMMERZ")
+        order = Order.objects.get()
+        validation = {
+            "status":"VALID", "tran_id":order.payment_transaction_id,
+            "amount":"180.00", "currency":"BDT", "store_id":"sandbox-store",
+            "risk_level":"1",
+        }
+
+        with patch("marketplace.views.validate_payment", return_value=validation):
+            response = self.client.post("/api/v1/payments/sslcommerz/ipn/", {
+                "tran_id":order.payment_transaction_id, "val_id":"validated-id",
+            }, format="json")
+
+        self.assertEqual(response.status_code, 400)
+        order.refresh_from_db()
+        self.assertEqual(order.payment_status, Order.PaymentStatus.PENDING)
+
+    def test_cancelled_checkout_restores_reserved_inventory_and_cart(self):
+        with patch("marketplace.views.initiate_payment", return_value="https://sandbox.sslcommerz.com/test-session"):
+            self.checkout("SSLCOMMERZ")
+        order = Order.objects.get()
+
+        response = self.client.post("/api/v1/payments/sslcommerz/cancel/", {
+            "tran_id":order.payment_transaction_id,
+        }, format="json")
+
+        self.assertEqual(response.status_code, 302)
+        order.refresh_from_db()
+        self.assertEqual(order.payment_status, Order.PaymentStatus.FAILED)
+        self.assertEqual(order.status, Order.Status.CANCELLED)
+        self.assertEqual(ShopProduct.objects.get(pk=self.listing.pk).stock, Decimal("20.000"))
+        self.assertEqual(CartItem.objects.get(cart=self.cart).quantity, Decimal("2.000"))
+
+    def test_shopkeeper_cannot_process_an_unpaid_wallet_order(self):
+        with patch("marketplace.views.initiate_payment", return_value="https://sandbox.sslcommerz.com/test-session"):
+            self.checkout("SSLCOMMERZ")
+        order = Order.objects.get()
+        self.client.force_authenticate(self.seller)
+
+        response = self.client.post(f"/api/v1/shopkeeper/orders/{order.id}/accept/")
+
+        self.assertEqual(response.status_code, 400)
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.PLACED)

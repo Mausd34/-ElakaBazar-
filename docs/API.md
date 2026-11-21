@@ -50,7 +50,10 @@ Base: `/api/v1/`
 - `DELETE /cart/` — clear cart
 - `PATCH /cart/items/<id>/` — update cart quantity
 - `DELETE /cart/items/<id>/` — remove a cart item
-- `POST /checkout/` — place a COD order (`address`); the server validates area, minimum order and stock
+- `POST /checkout/` — place an order with `address` and `payment_method` (`COD` or `SSLCOMMERZ`); online checkout also requires `email` and returns a hosted `payment_url`
+- SSLCommerz hosted checkout displays mobile-banking methods enabled for the merchant account; the customer completes payment on the provider's page.
+- `POST /payments/sslcommerz/success|fail|cancel/` — provider return callbacks; successful payments are marked paid only after server-side transaction validation.
+- `POST /payments/sslcommerz/ipn/` — provider notification for payment verification if the customer does not return to the site.
 
 ## Customer orders
 
