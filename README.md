@@ -55,25 +55,59 @@ This project is designed for rapid validation of a local grocery marketplace bef
 
 ---
 
-## Screenshots
+## Application tour
 
-### Homepage
+The screenshots below are desktop views of the running web app. Dashboard content depends on the signed-in role and available database records; use test accounts and sample records in a local environment.
 
-<p align="center">
-  <img src="./docs/screenshots/homepage.png" alt="Full desktop view of the ElakaBazar homepage" width="100%" />
-</p>
+### 1. Discover the marketplace
 
-### Store listing
+Browse local products, choose a service area, search the catalogue, and open nearby stores.
 
 <p align="center">
-  <img src="./docs/screenshots/stores.png" alt="Desktop view of ElakaBazar neighborhood stores" width="100%" />
+  <img src="./docs/screenshots/homepage.png" alt="ElakaBazar storefront with area selector, product categories, products, and nearby shops" width="100%" />
 </p>
 
-### Shopkeeper dashboard
+### 2. Find a neighborhood store
+
+Compare shops serving the selected area and review delivery and minimum-order details.
 
 <p align="center">
-  <img src="./docs/screenshots/shopkeeper.png" alt="Desktop view of the ElakaBazar shopkeeper dashboard" width="100%" />
+  <img src="./docs/screenshots/stores.png" alt="ElakaBazar neighborhood store listing" width="100%" />
 </p>
+
+### 3. Shop and check out
+
+Add products to the cart, select a delivery address in the shop's service area, and choose cash on delivery or an available hosted mobile-banking option.
+
+<p align="center">
+  <img src="./assets/screenshots/web-cart.svg" alt="ElakaBazar cart and checkout workflow illustration" width="100%" />
+</p>
+
+### 4. Track customer orders
+
+Customers can review their orders and follow status updates; public tracking omits private delivery details.
+
+<p align="center">
+  <img src="./assets/screenshots/web-orders.svg" alt="ElakaBazar customer order and tracking workflow illustration" width="100%" />
+</p>
+
+### 5. Manage a shop
+
+Shopkeepers can apply for approval, manage inventory and availability, and process orders for their own shops.
+
+<p align="center">
+  <img src="./docs/screenshots/shopkeeper.png" alt="ElakaBazar shopkeeper dashboard" width="100%" />
+</p>
+
+### 6. Coordinate deliveries and administration
+
+Delivery agents see assigned jobs. Administrators review shops, oversee orders, assign delivery agents, and manage the catalogue.
+
+<p align="center">
+  <img src="./assets/screenshots/admin-panel.svg" alt="ElakaBazar administration workflow illustration" width="100%" />
+</p>
+
+The SVG workflow images are product illustrations, not live dashboard screenshots. Screens that require an authenticated role should be captured with a dedicated local test account; never publish real customer addresses, credentials, or order data.
 
 ---
 
@@ -88,6 +122,7 @@ This project is designed for rapid validation of a local grocery marketplace bef
 - [Getting started](#getting-started)
   - [Option 1: Docker Compose](#option-1-docker-compose-recommended)
   - [Option 2: Run manually](#option-2-run-manually)
+  - [Database setup and migrations](#database-setup-and-migrations)
 - [Environment configuration](#environment-configuration)
 - [API overview](#api-overview)
 - [Development workflow](#development-workflow)
@@ -231,23 +266,16 @@ For manual setup:
 
 ### Option 1: Docker Compose (recommended)
 
-From a terminal:
+This starts PostgreSQL, the Django API, and the Vite web app together. Install Docker Desktop (with Compose v2), then run these commands from the repository root.
 
-```bash
+```powershell
 git clone https://github.com/Mausd34/-ElakaBazar-.git
 cd -ElakaBazar-
-
-# Create your local environment file
-# Windows PowerShell:
 Copy-Item .env.example .env
-
-# macOS / Linux:
-# cp .env.example .env
-
 docker compose up --build
 ```
 
-When the services start, open:
+On macOS/Linux, replace the copy command with `cp .env.example .env`. Wait for the database health check and services to finish starting, then open:
 
 | Service | Local address |
 |---|---|
@@ -255,17 +283,25 @@ When the services start, open:
 | Backend API | http://localhost:8000/api/v1/ |
 | Django admin | http://localhost:8000/admin/ |
 
-The Compose configuration starts PostgreSQL, Django and the Vite development server. The backend container runs database migrations as part of its startup command.
+The backend applies checked-in Django migrations on startup. To inspect logs or run migrations manually:
+
+```powershell
+docker compose logs -f backend
+docker compose exec backend python manage.py migrate
+docker compose exec backend python manage.py createsuperuser
+```
+
+The last command is optional and creates a private local admin account interactively.
 
 To stop the services:
 
-```bash
+```powershell
 docker compose down
 ```
 
 To stop the services and delete the local PostgreSQL volume (this deletes local database data):
 
-```bash
+```powershell
 docker compose down -v
 ```
 
@@ -273,55 +309,38 @@ docker compose down -v
 
 #### 1. Backend (Django)
 
-```bash
+```powershell
 cd backend
 
 python -m venv .venv
 
-# Windows PowerShell:
 .venv\Scripts\Activate.ps1
-
-# macOS / Linux:
-# source .venv/bin/activate
 
 pip install -r requirements.txt
 
-# Optional: copy the backend environment template
-# Windows PowerShell:
 Copy-Item .env.example .env
-
-# macOS / Linux:
-# cp .env.example .env
-
 python manage.py migrate
 python manage.py runserver
 ```
 
-The backend uses SQLite by default when `DATABASE_URL` is not set. The API is available at http://127.0.0.1:8000/api/v1/.
+On macOS/Linux, activate with `source .venv/bin/activate` and copy the template with `cp .env.example .env`. The backend uses SQLite locally by default. The API is available at http://127.0.0.1:8000/api/v1/.
 
 #### 2. Web frontend (React + Vite)
 
 Open a second terminal:
 
-```bash
+```powershell
 cd frontend
-npm install
-
-# Optional: create a local frontend environment file
-# Windows PowerShell:
+npm ci
 Copy-Item .env.example .env
-
-# macOS / Linux:
-# cp .env.example .env
-
 npm run dev
 ```
 
-Open http://localhost:5173/.
+On macOS/Linux, use `cp .env.example .env`. Open http://localhost:5173/. Start the backend in a separate terminal first.
 
 To create a production frontend build:
 
-```bash
+```powershell
 npm run build
 ```
 
@@ -329,13 +348,35 @@ npm run build
 
 Open another terminal:
 
-```bash
+```powershell
 cd mobile
 npm install
 npx expo start
 ```
 
-Use the Expo Go app to scan the QR code, or launch an available simulator. When testing on a physical phone, configure the API base URL to use your computer's LAN IP address rather than `localhost`.
+Use Expo Go to scan the QR code, or launch an available simulator. When testing on a physical phone, configure the API base URL to use your computer's LAN IP address rather than `localhost`.
+
+### Database setup and migrations
+
+The repository tracks Django migration files in `backend/marketplace/migrations/`; these define the schema and are the portable, safe way to recreate the database. Local SQLite records in `backend/db.sqlite3` are machine-specific and are not published to GitHub. Production database contents are provisioned in the hosting provider, not pushed as a file.
+
+For manual development, from `backend/`:
+
+```powershell
+python manage.py showmigrations
+python manage.py migrate
+python manage.py makemigrations --check --dry-run
+```
+
+When you intentionally change a model, create and review a migration before committing:
+
+```powershell
+python manage.py makemigrations marketplace
+python manage.py migrate
+python manage.py test
+```
+
+For a fresh local SQLite database, stop the backend and remove only `backend/db.sqlite3`, then run `python manage.py migrate` to recreate the schema. This deletes that local database's records; it does not affect a hosted database.
 
 ## Environment configuration
 
