@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
+import { sanitizeText } from '../utils/validation'
 
 type Order = {
   id: string; order_number: string; shop_name: string; address_line: string; area_name: string
@@ -43,7 +44,7 @@ export default function CustomerOrdersPage() {
     setReviewError('')
     setReviewMessage('')
     try {
-      await api.post('/reviews/', { order: selected.id, rating: Number(reviewRating), comment: reviewComment })
+      await api.post('/reviews/', { order: selected.id, rating: Number(reviewRating), comment: sanitizeText(reviewComment) })
       setSelected(order => order ? { ...order, has_review: true } : order)
       setOrders(current => current.map(order => order.id === selected.id ? { ...order, has_review: true } : order))
       setReviewComment('')
@@ -74,7 +75,7 @@ export default function CustomerOrdersPage() {
         <div className="order-total-row"><span>ডেলিভারি চার্জ</span><b>৳{Number(selected.delivery_fee).toFixed(2)}</b></div>
         <div className="order-total-row grand-total"><span>সর্বমোট</span><b>৳{Number(selected.total).toFixed(2)}</b></div>
         <h3>অর্ডারের অগ্রগতি</h3>
-        <ol className="status-timeline">{selected.history.map((event, index) => <li key={index}><span className="timeline-dot" /><div><b>{statusLabels[event.status] || event.status}</b><small>{dateText(event.created_at)}</small>{event.note && <p>{event.note}</p>}</div></li>)}</ol>
+        <ol className="status-timeline">{selected.history.map((event, index) => <li key={index}><span className="timeline-dot" /><div><b>{statusLabels[event.status] || event.status}</b><small>{dateText(event.created_at)}</small>{event.note && <p>{sanitizeText(event.note)}</p>}</div></li>)}</ol>
         {selected.status === 'DELIVERED' && <section className="review-panel">
           <h3>আপনার অভিজ্ঞতা কেমন ছিল?</h3>
           {selected.has_review ? <p className="success-notice" role="status">এই অর্ডারের জন্য আপনার রিভিউ জমা হয়েছে।</p> : <form className="review-form" onSubmit={submitReview}>

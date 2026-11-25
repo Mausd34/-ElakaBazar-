@@ -2,7 +2,10 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import axios from 'axios'
 import { Link, Route, Routes, useNavigate, useSearchParams } from 'react-router-dom'
 import { ShoppingBasket, MapPin, Search, UserRound, ShoppingCart, Menu, Plus, Minus, Trash2, Store, Package, LogOut } from 'lucide-react'
-import { api, login } from './api'
+import { api, logout as apiLogout } from './api'
+import { AuthProvider, useAuth } from './auth'
+import { ProtectedRoute } from './components/ProtectedRoute'
+import { SecurityHeaders } from './components/SecurityHeaders'
 import RegisterPage from './pages/RegisterPage'
 import AccountPage from './pages/AccountPage'
 import CustomerOrdersPage from './pages/CustomerOrdersPage'
@@ -29,6 +32,7 @@ function apiErrorMessage(error:unknown,fallback:string) {
 }
 
 function App() {
+  const { isAuthenticated, login: authLogin, fetchProfile } = useAuth()
   const [area,setArea] = useState('Tongi')
   const [areas,setAreas] = useState<{id:number;name:string}[]>([])
   const [shops,setShops] = useState<Shop[]>([])
@@ -58,7 +62,7 @@ function App() {
     } catch { setNotice('API connection হয়নি। Backend চালু করে আবার চেষ্টা করুন।') }
   }
   async function refreshCart() {
-    if (!localStorage.getItem('access')) return
+    if (!isAuthenticated) return
     try { const r=await api.get('/cart/'); setCart(r.data) } catch {}
   }
   useEffect(()=>{load(); refreshCart()},[])
@@ -73,7 +77,7 @@ function App() {
   },[areaId])
   const visibleProducts = useMemo(()=>products.filter(p=>(`${p.product_name} ${p.product_name_bn} ${p.shop_name} ${p.category_name}`).toLowerCase().includes(search.toLowerCase())),[products,search])
   async function addToCart(p:Product) {
-    if (!localStorage.getItem('access')) { navigate('/login'); return }
+    if (!isAuthenticated) { navigate('/login'); return }
     setBusy(true); setNotice('')
     try {
       await api.post('/cart/',{shop_product:p.id,quantity:1}); await refreshCart(); setNotice('কার্টে যোগ হয়েছে।')
@@ -81,10 +85,18 @@ function App() {
     finally {setBusy(false)}
   }
   async function clearCart() { await api.delete('/cart/'); await refreshCart() }
-  async function logout() { localStorage.clear(); setCart(null); setUser(null); navigate('/') }
+  async function logout() {
+    await apiLogout()
+    setCart(null)
+    setUser(null)
+    navigate('/')
+  }
   const count = cart?.items.reduce((n,i)=>n+Number(i.quantity),0) || 0
-  return <div>
-    <header className="topbar">
+  return (
+    <AuthProvider>
+      <SecurityHeaders />
+      <div>
+        <header className="topbar">
       <Link to="/" className="brand"><span className="brand-icon"><ShoppingBasket size={24}/></span><span>Elaka<span>Bazar</span><small>Neighborhood grocery</small></span></Link>
       <label className="location"><MapPin size={17}/><select value={area} onChange={e=>setArea(e.target.value)}>{areas.map(a=><option key={a.id}>{a.name}</option>)}</select></label>
       <div className="searchbox"><Search size={19}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search products or stores..."/></div>
@@ -147,20 +159,22 @@ function App() {
       <Route path="/track-order" element={<OrderTrackingPage/>}/>
       <Route path="/payment-result" element={<PaymentResultPage/>}/>
       <Route path="/admin/orders" element={<AdminOrdersPage/>}/>
-      <Route path="/register" element={<RegisterPage onRegistered={async(username,password)=>{await login(username,password);await refreshCart();navigate("/account")}}/>}/>
-      <Route path="/account" element={<AccountPage/>}/>
-      <Route path="/orders" element={<CustomerOrdersPage/>}/>
-      <Route path="/shopkeeper/inventory" element={<ShopkeeperInventoryPage/>}/>
-      <Route path="/shopkeeper/apply" element={<ShopkeeperApplicationPage/>}/>
-      <Route path="/delivery" element={<DeliveryAgentPage/>}/>
-      <Route path="/admin" element={<AdminDashboardPage/>}/>
-      <Route path="/login" element={<Login onLogin={async(u)=>{await login(u.username,u.password);await refreshCart();const profile=await api.get('/auth/me/');const destinations:{[role:string]:string}={SHOPKEEPER:'/shopkeeper',DELIVERY_AGENT:'/delivery',ADMIN:'/admin'};navigate(destinations[profile.data.role]||'/')}}/>}/>
-      <Route path="/cart" element={<CartPage cart={cart} refresh={refreshCart} clear={clearCart}/>}/>
+      <Route path="/register" element={<RegisterPage onRegistered={async(username,password)=>{await authLogin(username,password);await fetchProfile();await refreshCart();navigate("/account")}}/>}/>
+      <Route path="/account" element={<ProtectedRoute><AccountPage/></ProtectedRoute>}/>
+      <Route path="/orders" element={<ProtectedRoute><CustomerOrdersPage/></ProtectedRoute>}/>
+      <Route path="/shopkeeper/inventory" element={<ProtectedRoute allowedRoles={['SHOPKEEPER']}><ShopkeeperInventoryPage/></ProtectedRoute>}/>
+      <Route path="/shopkeeper/apply" element={<ProtectedRoute allowedRoles={['SHOPKEEPER']}><ShopkeeperApplicationPage/></ProtectedRoute>}/>
+      <Route path="/delivery" element={<ProtectedRoute allowedRoles={['DELIVERY_AGENT']}><DeliveryAgentPage/></ProtectedRoute>}/>
+      <Route path="/admin" element={<ProtectedRoute allowedRoles={['ADMIN']}><AdminDashboardPage/></ProtectedRoute>}/>
+      <Route path="/login" element={<Login onLogin={async(u)=>{await authLogin(u.username,u.password);await fetchProfile();await refreshCart();navigate('/account')}}/>}/>
+      <Route path="/cart" element={<ProtectedRoute><CartPage cart={cart} refresh={refreshCart} clear={clearCart}/></ProtectedRoute>}/>
       <Route path="/shopkeeper" element={<ShopkeeperPage/>}/>
       <Route path="*" element={<main className="page"><h1>পৃষ্ঠা পাওয়া যায়নি</h1><Link to="/">হোমে ফিরুন</Link></main>}/>
     </Routes>
     <footer><div className="footer-brand">ElakaBazar</div><p>আপনার এলাকার বাজার, এখন আপনার হাতেই।</p><small>© 2026 ElakaBazar. Local shops, connected.</small></footer>
-  </div>
+      </div>
+    </AuthProvider>
+  )
 }
 
 function OrderTrackingPage() {
