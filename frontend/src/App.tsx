@@ -14,6 +14,7 @@ import DeliveryAgentPage from './pages/DeliveryAgentPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
 import ShopkeeperApplicationPage from './pages/ShopkeeperApplicationPage'
 import LocationPage from './pages/LocationPage'
+import ReviewSection from './components/ReviewSection'
 
 type Shop = { id:number; name:string; area_name:string; address:string; delivery_fee:string; minimum_order:string }
 type Product = { id:number; shop:number; shop_name:string; product:number; product_name:string; product_name_bn:string; unit:string; image_url:string; category_name:string; price:string; stock:string }
@@ -153,6 +154,7 @@ function App() {
             <img src="https://images.unsplash.com/photo-1556740749-887f6717d7e4?auto=format&fit=crop&w=900&q=80" alt="Shop owner smiling in front of a local grocery store"/>
           </div>
         </section>
+        <ReviewSection shopId="shop-1" />
       </main>}/>
       <Route path="/shops" element={<main className="page"><h1>আপনার এলাকার দোকান</h1><div className="shop-grid">{shops.map(s=><div className="shop-card" key={s.id}><div className="shop-avatar"><Store/></div><div><h3>{s.name}</h3><p>{s.area_name} · {s.address}</p></div></div>)}</div></main>}/>
       <Route path="/locations" element={<LocationPage/>}/>
