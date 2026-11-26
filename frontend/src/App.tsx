@@ -3,7 +3,7 @@ import axios from 'axios'
 import { Link, Route, Routes, useNavigate, useSearchParams } from 'react-router-dom'
 import { ShoppingBasket, MapPin, Search, UserRound, ShoppingCart, Menu, Plus, Minus, Trash2, Store, Package, LogOut } from 'lucide-react'
 import { api, logout as apiLogout } from './api'
-import { AuthProvider, useAuth } from './auth'
+import { useAuth } from './auth'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { SecurityHeaders } from './components/SecurityHeaders'
 import RegisterPage from './pages/RegisterPage'
@@ -93,7 +93,7 @@ function App() {
   }
   const count = cart?.items.reduce((n,i)=>n+Number(i.quantity),0) || 0
   return (
-    <AuthProvider>
+    <>
       <SecurityHeaders />
       <div>
         <header className="topbar">
@@ -173,7 +173,7 @@ function App() {
     </Routes>
     <footer><div className="footer-brand">ElakaBazar</div><p>আপনার এলাকার বাজার, এখন আপনার হাতেই।</p><small>© 2026 ElakaBazar. Local shops, connected.</small></footer>
       </div>
-    </AuthProvider>
+    </>
   )
 }
 
